@@ -36,8 +36,9 @@ void ex_down(jl_t* jlc) {
 }
 
 void vi_get_input(ctx_t* ctx) {
-//	jl_cv_loop_webcam(ctx->jl_cv);
-	jl_cv_loop_image(ctx->jl_cv, "Field_Images/19.jpg");
+	jl_cv_loop_webcam(ctx->jl_cv);
+//	jl_cv_loop_flip(ctx->jl_cv, 0, 1);
+//	jl_cv_loop_image(ctx->jl_cv, "Field_Images/19.jpg");
 }
 
 void ex_loop(jl_t* jlc) {
@@ -117,8 +118,8 @@ static inline void ex_init_vos(jl_t* jlc) {
 static inline void ex_init_cv(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 
-//	jl_cv_init_webcam(ctx->jl_cv, JL_CV_ORIG);
-	jl_cv_init_image(ctx->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg");
+	jl_cv_init_webcam(ctx->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
+//	jl_cv_init_image(ctx->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg");
 }
 
 void hack_user_init(jl_t* jlc) {

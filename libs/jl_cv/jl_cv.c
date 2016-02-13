@@ -11,6 +11,7 @@ static void jl_cv_img_crop(jl_cv_t* jl_cv, IplImage* image_to_disp, int cvt) {
 }
 
 static void jl_cv_conv__(jl_cv_t* jl_cv, int hsv, int gray) {
+	cvFlip(jl_cv->image, NULL, -1);
 	cvCvtColor(jl_cv->image, jl_cv->image_hsv, hsv);
 	cvCvtColor(jl_cv->image, jl_cv->gray_image, gray);
 	cvSmooth(jl_cv->gray_image, jl_cv->gray_blur, CV_GAUSSIAN, 15,15,0,0);
@@ -23,21 +24,21 @@ void jl_cv_disp_gray_(jl_cv_t* jl_cv) {
 
 static void jl_cv_webcam_get__(jl_cv_t* jl_cv) {
 	jl_cv->image = cvQueryFrame(jl_cv->camera);
-	cvResize(jl_cv->image, jl_cv->image, CV_INTER_LINEAR);
 	if( jl_cv->image == NULL ) {
 		fprintf(stderr, "couldn't retrieve frame\n" );
 		exit(1);
 	}
+	cvResize(jl_cv->image, jl_cv->image, CV_INTER_LINEAR);
 }
 
 static void jl_cv_image_get__(jl_cv_t* jl_cv, str_t fname) {
 	if(jl_cv->image) cvReleaseImage( &(jl_cv->image) );
 	jl_cv->image = cvLoadImage(fname, 1);
-	cvResize(jl_cv->image, jl_cv->image, CV_INTER_LINEAR);
 	if( jl_cv->image == NULL ) {
 		fprintf(stderr, "Could not load image file: %s\n", fname );
 		exit(1);
 	}
+	cvResize(jl_cv->image, jl_cv->image, CV_INTER_LINEAR);
 }
 
 static void jl_cv_hsv_init__(jl_cv_t* jl_cv) {
@@ -69,6 +70,17 @@ void jl_cv_getoutput(jl_cv_t* jl_cv) {
 	}
 }
 
+static void jl_cv_setf(jl_cv_t* jl_cv, jl_cv_flip_t f) {
+	if(f == JL_CV_FLIPX)
+		jl_cv->flip = 0;
+	else if(f == JL_CV_FLIPY)
+		jl_cv->flip = 1;
+	else if(f == JL_CV_FLIPB)
+		jl_cv->flip = -1;
+	else if(f == JL_CV_FLIPN)
+		jl_cv->flip = -2;
+}
+
 /* Export Functions */
 
 jl_cv_t* jl_cv_init(jl_t* jlc) {
@@ -86,7 +98,8 @@ void jl_cv_kill(jl_cv_t* jl_cv) {
 	cvReleaseCapture(&(jl_cv->camera));
 }
 
-void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output) {
+void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f) {
+	jl_cv_setf(jl_cv, f);
 	jl_cv->camera = cvCaptureFromCAM(0); // open the default camera id == 0
 	// If webcam can't be opened, then fail
 	if( jl_cv->camera == NULL ) {
@@ -102,7 +115,10 @@ void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output) {
 		jl_cv->image->height, 3);
 }
 
-void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname) {
+void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname,
+	jl_cv_flip_t f)
+{
+	jl_cv_setf(jl_cv, f);
 	jl_cv_image_get__(jl_cv, fname);
 	jl_cv_hsv_init__(jl_cv);
 	jl_cv->output = output;
