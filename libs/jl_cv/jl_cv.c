@@ -196,6 +196,33 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 	return count;
 }
 
+/**
+ * Find the width and height of detected objects.
+**/
+u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_rect_t* rtn_rects){
+	int i, total;
+	CvSeq *contours = NULL;
+	CvRect rect;
+
+	jl_cv_disp_gray_(jl_cv);
+	total = cvFindContours(
+		jl_cv->gray_image,	// The image
+		jl_cv->storage,		// Output of found contours
+		&contours,		// ptr to 1st contour
+		sizeof(CvContour),
+		CV_RETR_LIST,
+		CV_CHAIN_APPROX_SIMPLE,
+		cvPoint(0,0)
+	);
+	for(i = 0; i < total; i++) {
+		rect = cvBoundingRect(contours, 0);
+		rtn_rects[i] = (jl_rect_t) {
+			rect.x, rect.y, rect.width, rect.height };
+		contours = (CvSeq *)(contours->h_next);
+	}
+	return total;
+}
+
 void jl_cv_erode(jl_cv_t* jl_cv) {
 	cvErode(jl_cv->gray_image, jl_cv->gray_image, NULL, 1);
 }
@@ -224,8 +251,13 @@ void jl_cv_struct_erode(jl_cv_t* jl_cv, int w, int h, int* values) {
 	IplConvKernel* kernel = cvCreateStructuringElementEx(w, h, 0, 0,
 		CV_SHAPE_CUSTOM, values);
 	cvErode(jl_cv->gray_image, jl_cv->gray_image, kernel, 1);
-//	cvDilate(jl_cv->gray_image, jl_cv->gray_image, kernel, 1);
-//	cvErode(jl_cv->gray_image, jl_cv->gray_image, kernel, 2);
+	cvDilate(jl_cv->gray_image, jl_cv->gray_image, kernel, 1);
+	cvErode(jl_cv->gray_image, jl_cv->gray_image, kernel, 1);
+}
+
+void jl_cv_img_size(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h) {
+	if(w) *w = jl_cv->disp_image->width;
+	if(h) *h = jl_cv->disp_image->height;
 }
 
 /**
@@ -240,5 +272,6 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 		(void*)jl_cv->disp_image->imageData,
 		jl_cv->disp_image->width,
 		jl_cv->disp_image->height, 3);
-	return ((double)jl_cv->disp_image->height) / ((double)jl_cv->disp_image->width);
+	return ((double)jl_cv->disp_image->height) /
+		((double)jl_cv->disp_image->width);
 }

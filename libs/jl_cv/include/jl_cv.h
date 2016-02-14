@@ -46,10 +46,13 @@ u32_t jl_cv_loop_detect_circle(jl_cv_t* jl_cv, u32_t max,
 	jl_rect_t* rtn_circles);
 u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 	i32_t filter_out, u32_t minlen, jl_cv_line_t* rtn_lines);
+u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_rect_t* rtn_rects);
 // Erosion.
 void jl_cv_erode(jl_cv_t* jl_cv);
 void jl_cv_skeleton(jl_cv_t* jl_cv, int w, int h, int* values);
 void jl_cv_struct_erode(jl_cv_t* jl_cv, int w, int h, int* values);
+// Get values
+void jl_cv_img_size(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h);
 // Export Ending Image to texture.
 double jl_cv_loop_maketx(jl_cv_t* jl_cv);
 
@@ -57,3 +60,4 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv);
 
 void jl_cv_draw_circle(jl_cv_t* jl_cv, jl_rect_t circle);
 void jl_cv_draw_line(jl_cv_t* jl_cv, jl_cv_line_t line);
+void jl_cv_draw_rect(jl_cv_t* jl_cv, jl_rect_t rect);
