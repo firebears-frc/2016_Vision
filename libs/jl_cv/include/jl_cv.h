@@ -20,6 +20,10 @@ typedef struct {
 	CvPoint p2;
 }jl_cv_line_t;
 
+typedef struct {
+	int x, y, w, h;
+}jl_cv_rect_t;
+
 typedef struct{
 	jl_t* jlc;
 	CvCapture* camera;
@@ -55,7 +59,7 @@ u32_t jl_cv_loop_detect_circle(jl_cv_t* jl_cv, u32_t max,
 	jl_rect_t* rtn_circles);
 u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 	i32_t filter_out, u32_t minlen, jl_cv_line_t* rtn_lines);
-u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_rect_t* rtn_rects);
+u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_cv_rect_t* rtn_rects);
 // Erosion.
 void jl_cv_erode(jl_cv_t* jl_cv);
 void jl_cv_skeleton(jl_cv_t* jl_cv, int w, int h, int* values);
@@ -69,4 +73,4 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv);
 
 void jl_cv_draw_circle(jl_cv_t* jl_cv, jl_rect_t circle);
 void jl_cv_draw_line(jl_cv_t* jl_cv, jl_cv_line_t line);
-void jl_cv_draw_rect(jl_cv_t* jl_cv, jl_rect_t rect);
+void jl_cv_draw_rect(jl_cv_t* jl_cv, jl_cv_rect_t rect);

@@ -7,7 +7,7 @@ typedef struct{
 	jl_vo_t* vos;
 	jl_cv_t* jl_cv;
 	int item_count;
-	jl_rect_t target;
+	jl_cv_rect_t target;
 	m_u16_t targetx;
 	m_u16_t targety;
 	m_u16_t targetz;

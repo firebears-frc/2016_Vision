@@ -51,10 +51,10 @@ void vi_get_input(ctx_t* ctx) {
 
 void vi_loop(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
-	m_u16_t i;
-	jl_rect_t blobs[30];
+	m_u16_t i = 0;
+	jl_cv_rect_t blobs[30];
 	uint8_t bounds[] = {20, 200, 90, 40, 255, 180};
-	m_u16_t maxw, maxi;
+	int maxw = 0, maxi = 0;
 
 // Read image
 	vi_get_input(ctx);
@@ -66,11 +66,15 @@ void vi_loop(jl_t* jlc) {
 	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
 // Find the Best Blob
 	for(i = 0; i < ctx->item_count; i++) {
+		jl_io_print(jlc, "%d,%d", i, blobs[i].w);
 		if(blobs[i].w > maxw) {
 			maxw = blobs[i].w;
 			maxi = i;
 		}
+//		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
 	}
+	jl_io_print(jlc, "__ %d", maxi);
+	jl_io_print(jlc, ":%d", blobs[maxi].w);
 	ctx->target = blobs[maxi];
 	ctx->targetx = ctx->target.x + (ctx->target.w / 2);
 	ctx->targety = ctx->target.y + (ctx->target.h / 2);

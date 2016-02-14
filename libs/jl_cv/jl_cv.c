@@ -215,7 +215,7 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 /**
  * Find the width and height of detected objects.
 **/
-u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_rect_t* rtn_rects){
+u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_cv_rect_t* rtn_rects){
 	int i, total;
 	CvSeq *contours = NULL;
 	CvRect rect;
@@ -232,7 +232,7 @@ u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_rect_t* rtn_rects){
 	);
 	for(i = 0; i < total; i++) {
 		rect = cvBoundingRect(contours, 0);
-		rtn_rects[i] = (jl_rect_t) {
+		rtn_rects[i] = (jl_cv_rect_t) {
 			rect.x, rect.y, rect.width, rect.height };
 		contours = (CvSeq *)(contours->h_next);
 	}
