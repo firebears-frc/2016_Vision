@@ -1,5 +1,12 @@
 #include "header/main.h"
-#define VI_WEBCAM 0
+#define TEST
+#ifdef TEST
+	#define HOSTNAME "10.30.13.113"
+	#define VI_WEBCAM 0
+#else
+	#define HOSTNAME "roborio-2846-frc.local"
+	#define VI_WEBCAM 1
+#endif
 
 int oldtbiu = 0;
 int shape[] = {
@@ -128,6 +135,7 @@ static inline void vi_init_ctx(jl_t* jlc) {
 	jl_me_alloc(jlc, &jlc->uctx, sizeof(ctx_t), 0);
 	ctx_t* ctx = jlc->uctx;
 	ctx->jl_cv = jl_cv_init(jlc);
+	ctx->jl_ntcore = jl_ntcore_init(jlc, HOSTNAME);
 	ctx->font = (jl_font_t) { 0, JL_IMGI_ICON, 0,
 		color, .025f };
 }

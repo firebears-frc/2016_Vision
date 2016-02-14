@@ -18,7 +18,7 @@ extern "C" {
 #define NT_DEFAULT_PORT 1735
 
 /** NetworkTables data types. */
-enum NT_Type {
+typedef enum {
   NT_UNASSIGNED = 0,
   NT_BOOLEAN = 0x01,
   NT_DOUBLE = 0x02,
@@ -28,7 +28,7 @@ enum NT_Type {
   NT_DOUBLE_ARRAY = 0x20,
   NT_STRING_ARRAY = 0x40,
   NT_RPC = 0x80
-};
+}NT_Type;
 
 /** NetworkTables entry flags. */
 enum NT_EntryFlags {
@@ -64,7 +64,7 @@ enum NT_NotifyKind {
  */
 
 /** A NetworkTables string. */
-struct NT_String {
+typedef struct {
   /** String contents (UTF-8).
    * The string is NOT required to be zero-terminated.
    * When returned by the library, this is zero-terminated and allocated with
@@ -76,17 +76,17 @@ struct NT_String {
    * terminated, this does not include the zero-termination.
    */
   size_t len;
-};
+}NT_String;
 
 /** NetworkTables Entry Value.  Note this is a typed union. */
 struct NT_Value {
-  enum NT_Type type;
+  NT_Type type;
   unsigned long long last_change;
   union {
     int v_boolean;
     double v_double;
-    struct NT_String v_string;
-    struct NT_String v_raw;
+    NT_String v_string;
+    NT_String v_raw;
     struct {
       int *arr;
       size_t size;
@@ -96,7 +96,7 @@ struct NT_Value {
       size_t size;
     } arr_double;
     struct {
-      struct NT_String *arr;
+      NT_String *arr;
       size_t size;
     } arr_string;
   } data;
@@ -105,10 +105,10 @@ struct NT_Value {
 /** NetworkTables Entry Information */
 struct NT_EntryInfo {
   /** Entry name */
-  struct NT_String name;
+  NT_String name;
 
   /** Entry type */
-  enum NT_Type type;
+  NT_Type type;
 
   /** Entry flags */
   unsigned int flags;
@@ -119,7 +119,7 @@ struct NT_EntryInfo {
 
 /** NetworkTables Connection Information */
 struct NT_ConnectionInfo {
-  struct NT_String remote_id;
+  NT_String remote_id;
   char *remote_name;
   unsigned int remote_port;
   unsigned long long last_update;
@@ -127,21 +127,21 @@ struct NT_ConnectionInfo {
 };
 
 /** NetworkTables RPC Parameter Definition */
-struct NT_RpcParamDef {
-  struct NT_String name;
+typedef struct {
+  NT_String name;
   struct NT_Value def_value;
-};
+}NT_RpcParamDef;
 
 /** NetworkTables RPC Result Definition */
-struct NT_RpcResultDef {
-  struct NT_String name;
-  enum NT_Type type;
-};
+typedef struct {
+  NT_String name;
+  NT_Type type;
+}NT_RpcResultDef;
 
 /** NetworkTables RPC Definition */
 struct NT_RpcDefinition {
   unsigned int version;
-  struct NT_String name;
+  NT_String name;
   size_t num_params;
   NT_RpcParamDef *params;
   size_t num_results;
@@ -152,8 +152,8 @@ struct NT_RpcDefinition {
 struct NT_RpcCallInfo {
   unsigned int rpc_id;
   unsigned int call_uid;
-  struct NT_String name;
-  struct NT_String params;
+  NT_String name;
+  NT_String params;
 };
 
 /*
@@ -406,13 +406,13 @@ void NT_DisposeValue(struct NT_Value *value);
 void NT_InitValue(struct NT_Value *value);
 
 /* frees string memory */
-void NT_DisposeString(struct NT_String *str);
+void NT_DisposeString(NT_String *str);
 
 /* sets length to zero and pointer to null */
-void NT_InitString(struct NT_String *str);
+void NT_InitString(NT_String *str);
 
 /* Gets the type for the specified key, or unassigned if non existent. */
-enum NT_Type NT_GetType(const char *name, size_t name_len);
+NT_Type NT_GetType(const char *name, size_t name_len);
 
 /** Dispose Connection Info Array
  * Disposes a connection info array
@@ -512,7 +512,7 @@ double *NT_AllocateDoubleArray(size_t size);
  * After use, the array should be freed using the NT_FreeStringArray()
  * function.
  */
-struct NT_String *NT_AllocateStringArray(size_t size);
+NT_String *NT_AllocateStringArray(size_t size);
 
 /** Free Char Array
  * Frees an array of chars.
@@ -545,7 +545,7 @@ void NT_FreeBooleanArray(int *v_boolean);
  * freed before calling this. This function will free all the strings
  * individually.
  */
-void NT_FreeStringArray(struct NT_String *v_string, size_t arr_size);
+void NT_FreeStringArray(NT_String *v_string, size_t arr_size);
 
 /** Get Value Type
  * Returns the type of an NT_Value struct.
@@ -554,7 +554,7 @@ void NT_FreeStringArray(struct NT_String *v_string, size_t arr_size);
  * @param value  The NT_Value struct to get the type from.
  * @return       The type of the value, or unassigned if null.
  */
-enum NT_Type NT_GetValueType(const struct NT_Value *value);
+NT_Type NT_GetValueType(const struct NT_Value *value);
 
 /** Get Value Boolean
  * Returns the boolean from the NT_Value.
@@ -885,7 +885,7 @@ int NT_SetEntryDoubleArray(const char *name, size_t name_len, const double *arr,
  * @return          0 on error (type mismatch), 1 on success
  */
 int NT_SetEntryStringArray(const char *name, size_t name_len,
-                           const struct NT_String *arr, size_t size, int force);
+                           const NT_String *arr, size_t size, int force);
 
 #ifdef __cplusplus
 }
