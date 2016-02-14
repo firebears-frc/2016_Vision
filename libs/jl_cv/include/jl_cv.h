@@ -8,6 +8,13 @@ typedef enum {
 	JL_CV_GRAY, // the modified image will be output. ( Grayscale )
 }jl_cv_output_t;
 
+typedef enum {
+	JL_CV_FLIPX,
+	JL_CV_FLIPY,
+	JL_CV_FLIPB,
+	JL_CV_FLIPN,
+}jl_cv_flip_t;
+
 typedef struct {
 	CvPoint p1;
 	CvPoint p2;
@@ -26,6 +33,7 @@ typedef struct{
 	IplImage* erod_image;
 	jl_cv_output_t output;
 	m_u8_t convertdone;
+	m_i8_t flip;
 	jl_tex_t textures[1]; // Textures.
 	CvMemStorage* storage;
 	IplConvKernel* element;
@@ -35,8 +43,9 @@ typedef struct{
 jl_cv_t* jl_cv_init(jl_t* jlc);
 void jl_cv_kill(jl_cv_t* jl_cv);
 // Use the webcam or image
-void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output);
-void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname);
+void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f);
+void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname,
+	jl_cv_flip_t f);
 //
 void jl_cv_loop_webcam(jl_cv_t* jl_cv); 
 void jl_cv_loop_image(jl_cv_t* jl_cv, str_t fname);
