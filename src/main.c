@@ -1,4 +1,5 @@
 #include "header/main.h"
+#define VI_WEBCAM 0
 
 int oldtbiu = 0;
 int shape[] = {
@@ -36,9 +37,11 @@ void ex_down(jl_t* jlc) {
 }
 
 void vi_get_input(ctx_t* ctx) {
+#if VI_WEBCAM == 1
 	jl_cv_loop_webcam(ctx->jl_cv);
-//	jl_cv_loop_flip(ctx->jl_cv, 0, 1);
-//	jl_cv_loop_image(ctx->jl_cv, "Field_Images/19.jpg");
+#else
+	jl_cv_loop_image(ctx->jl_cv, "Field_Images/19.jpg");
+#endif
 }
 
 void ex_loop(jl_t* jlc) {
@@ -118,8 +121,12 @@ static inline void ex_init_vos(jl_t* jlc) {
 static inline void ex_init_cv(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 
+#if VI_WEBCAM == 1
 	jl_cv_init_webcam(ctx->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
-//	jl_cv_init_image(ctx->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg");
+#else
+	jl_cv_init_image(ctx->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
+		JL_CV_FLIPN);
+#endif
 }
 
 void hack_user_init(jl_t* jlc) {

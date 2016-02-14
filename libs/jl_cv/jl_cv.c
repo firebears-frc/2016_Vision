@@ -11,7 +11,7 @@ static void jl_cv_img_crop(jl_cv_t* jl_cv, IplImage* image_to_disp, int cvt) {
 }
 
 static void jl_cv_conv__(jl_cv_t* jl_cv, int hsv, int gray) {
-	cvFlip(jl_cv->image, NULL, -1);
+	if(jl_cv->flip!=-2) cvFlip(jl_cv->image, NULL, jl_cv->flip);
 	cvCvtColor(jl_cv->image, jl_cv->image_hsv, hsv);
 	cvCvtColor(jl_cv->image, jl_cv->gray_image, gray);
 	cvSmooth(jl_cv->gray_image, jl_cv->gray_blur, CV_GAUSSIAN, 15,15,0,0);
@@ -217,9 +217,19 @@ void jl_cv_erode(jl_cv_t* jl_cv) {
 }
 
 void jl_cv_skeleton(jl_cv_t* jl_cv, int w, int h, int* values) {
+//	m_u8_t done;
+//	do {
+		cvMorphologyEx(jl_cv->gray_image, jl_cv->temp_image, 
+			jl_cv->erod_image, jl_cv->element, 3, 1);
+		cvNot(jl_cv->temp_image, jl_cv->temp_image);
+		cvAnd(jl_cv->gray_image, jl_cv->temp_image, jl_cv->temp_image, NULL);
+		cvOr(jl_cv->skel_image, jl_cv->temp_image, jl_cv->skel_image, NULL);
+
+/*
 //	while(1) {
-		cvErode(jl_cv->gray_image, jl_cv->erod_image, jl_cv->element, 4);
-		cvDilate(jl_cv->erod_image, jl_cv->temp_image, jl_cv->element, 3);
+		cvErode(jl_cv->gray_image, jl_cv->temp_image, jl_cv->element, 4);
+		cvDilate(jl_cv->temp_image, jl_cv->temp_image, jl_cv->element, 4);
+		cvErode(jl_cv->temp_image, jl_cv->temp_image, jl_cv->element, 1);
 		cvSub(jl_cv->gray_image, jl_cv->temp_image, jl_cv->temp_image,
 			NULL);
 		cvOr(jl_cv->skel_image, jl_cv->temp_image, jl_cv->skel_image, NULL);
@@ -230,7 +240,7 @@ void jl_cv_skeleton(jl_cv_t* jl_cv, int w, int h, int* values) {
 //		if(max == 0) break;
 //	}
 	jl_cv_disp_gray_(jl_cv);
-//	jl_cv_erode(jl_cv);
+//	jl_cv_erode(jl_cv);*/
 //	cvDilate(jl_cv->gray_image, jl_cv->gray_image, NULL, 1);
 //	cvSubtract()
 //	cvOr(jl_cv->gray_image, jl_cv->gray_image);
