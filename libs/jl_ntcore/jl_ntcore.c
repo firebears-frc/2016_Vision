@@ -21,6 +21,10 @@ jl_ntcore_t* jl_ntcore_init(jl_t* jlc, str_t hostname) {
 	return jl_ntcore;
 }
 
+void jl_ntcore_push_num(jl_ntcore_t* jl_ntcore, str_t name, f32_t value) {
+	NT_SetEntryDouble(name, strlen(name), value, 1);
+}
+
 void jl_ntcore_kill(jl_ntcore_t* jl_ntcore) {
 	NT_StopClient();
 	dlclose(jl_ntcore->ntcore);
