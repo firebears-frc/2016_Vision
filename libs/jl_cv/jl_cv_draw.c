@@ -18,11 +18,11 @@ void jl_cv_draw_line(jl_cv_t* jl_cv, jl_cv_line_t line) {
 	jl_cv_disp_gray_(jl_cv);
 }
 
-void jl_cv_draw_rect(jl_cv_t* jl_cv, jl_rect_t rect) {
+void jl_cv_draw_rect(jl_cv_t* jl_cv, jl_cv_rect_t rect) {
 	jl_cv_getoutput(jl_cv);
 	cvRectangle(jl_cv->disp_image,
-		cvPoint(cvRound(rect.x), cvRound(rect.y)),
-		cvPoint(cvRound(rect.x + rect.w), cvRound(rect.y + rect.h)),
+		cvPoint(rect.x, rect.y),
+		cvPoint(rect.x + rect.w, rect.y + rect.h),
 		CV_RGB(0x00,0xFF,0x00), 2, 8, 0);
 	jl_cv_disp_gray_(jl_cv);
 }

@@ -1,5 +1,14 @@
 #include "header/main.h"
-#define VI_WEBCAM 0
+#define TEST
+#ifdef TEST
+	#define HOSTNAME "10.30.13.113"
+	#define VI_WEBCAM 0
+	#define HEADLESS
+#else
+	#define HOSTNAME "roborio-2846-frc.local"
+	#define VI_WEBCAM 1
+	#define HEADLESS
+#endif
 
 int oldtbiu = 0;
 int shape[] = {
@@ -23,11 +32,24 @@ m_u8_t color[] = { 127, 255, 127, 255 };
 	oldtbiu = jl_me_tbiu();
 }*/
 
-static void vi_redraw(jl_t* jlc) {
+static inline void vi_redraw(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
+#ifndef HEADLESS
 	double ar;
+#endif
 
+	// Draw target
+	u32_t drawsize = ctx->target.h / 2;
+	jl_cv_draw_circle(ctx->jl_cv, (jl_rect_t) {
+		ctx->targetx,ctx->targety,drawsize/2,0});
+	jl_cv_draw_line(ctx->jl_cv, (jl_cv_line_t) {
+		cvPoint(ctx->targetx-drawsize,ctx->targety),
+		cvPoint(ctx->targetx+drawsize,ctx->targety)});
+	jl_cv_draw_line(ctx->jl_cv, (jl_cv_line_t) {
+		cvPoint(ctx->targetx,ctx->targety-drawsize),
+		cvPoint(ctx->targetx,ctx->targety+drawsize)});
 	// Change to image
+#ifndef HEADLESS
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
 	jl_gr_vos_texture(jlc, &(ctx->vos[0]),
 		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc) },
@@ -39,6 +61,7 @@ static void vi_redraw(jl_t* jlc) {
 	jl_gr_draw_text(jlc, jl_me_format(jlc, "movex:%d, movey:%d",
 			ctx->movex, ctx->movey),
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
+#endif
 }
 
 void vi_get_input(ctx_t* ctx) {
@@ -49,12 +72,22 @@ void vi_get_input(ctx_t* ctx) {
 #endif
 }
 
-void vi_loop(jl_t* jlc) {
+static inline void vi_push(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
-	m_u16_t i;
-	jl_rect_t blobs[30];
+
+	jl_ntcore_push_num(ctx->jl_ntcore, "vision/distance",
+		(double)ctx->targetz);
+	jl_ntcore_push_num(ctx->jl_ntcore, "vision/angle", (double)ctx->movex);
+	jl_ntcore_push_num(ctx->jl_ntcore, "vision/fps",
+		(double)(1./jlc->psec));
+}
+
+static inline void vi_loop(jl_t* jlc) {
+	ctx_t* ctx = jlc->uctx;
+	m_u16_t i = 0;
+	jl_cv_rect_t blobs[30];
 	uint8_t bounds[] = {20, 200, 90, 40, 255, 180};
-	m_u16_t maxw, maxi;
+	int maxw = 0, maxi = 0;
 
 // Read image
 	vi_get_input(ctx);
@@ -70,6 +103,7 @@ void vi_loop(jl_t* jlc) {
 			maxw = blobs[i].w;
 			maxi = i;
 		}
+//		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
 	}
 	ctx->target = blobs[maxi];
 	ctx->targetx = ctx->target.x + (ctx->target.w / 2);
@@ -77,20 +111,11 @@ void vi_loop(jl_t* jlc) {
 	ctx->targetz = (100 * ctx->imgy / ctx->target.y) - 100;
 	ctx->movex = ctx->targetx - (ctx->imgx / 2);
 	ctx->movey = ctx->targety - (ctx->imgy / 2);
-// Draw target
-	u32_t drawsize = ctx->target.h / 2;
-	jl_cv_draw_circle(ctx->jl_cv, (jl_rect_t) {
-		ctx->targetx,ctx->targety,drawsize/2,0});
-	jl_cv_draw_line(ctx->jl_cv, (jl_cv_line_t) {
-		cvPoint(ctx->targetx-drawsize,ctx->targety),
-		cvPoint(ctx->targetx+drawsize,ctx->targety)});
-	jl_cv_draw_line(ctx->jl_cv, (jl_cv_line_t) {
-		cvPoint(ctx->targetx,ctx->targety-drawsize),
-		cvPoint(ctx->targetx,ctx->targety+drawsize)});
 }
 
 void vi_wdns(jl_t* jlc) {
 	vi_loop(jlc);
+	vi_push(jlc);
 	vi_redraw(jlc);
 }
 
@@ -124,6 +149,7 @@ static inline void vi_init_ctx(jl_t* jlc) {
 	jl_me_alloc(jlc, &jlc->uctx, sizeof(ctx_t), 0);
 	ctx_t* ctx = jlc->uctx;
 	ctx->jl_cv = jl_cv_init(jlc);
+	ctx->jl_ntcore = jl_ntcore_init(jlc, HOSTNAME);
 	ctx->font = (jl_font_t) { 0, JL_IMGI_ICON, 0,
 		color, .025f };
 }
