@@ -80,6 +80,9 @@ static inline void vi_push(jl_t* jlc) {
 	jl_ntcore_push_num(ctx->jl_ntcore, "vision/angle", (double)ctx->movex);
 	jl_ntcore_push_num(ctx->jl_ntcore, "vision/fps",
 		(double)(1./jlc->psec));
+	if(jl_ntcore_pull_bool(ctx->jl_ntcore, "calibrationMode") {
+		jl_ntcore_push_data(ctx->jl_ntcore, "image", );
+	}
 }
 
 static inline void vi_loop(jl_t* jlc) {
@@ -161,15 +164,20 @@ static inline void vi_init_vos(jl_t* jlc) {
 }
 
 static inline void vi_init_cv(jl_t* jlc) {
-	ctx_t* ctx = jlc->uctx;
+	ctx_t* vi = jlc->uctx;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(ctx->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
+	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
 #else
-	jl_cv_init_image(ctx->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
+	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
 		JL_CV_FLIPN);
 #endif
-	jl_cv_img_size(ctx->jl_cv, &ctx->imgx, &ctx->imgy);
+	jl_cv_img_size(vi->jl_cv, &vi->imgx, &vi->imgy);
+}
+
+static inline void vi_init_net(jl_t* jlc) {
+	ctx_t* vi = jlc->uctx;
+	jl_ntcore_push_bool(vi->jl_ntcore, "vision/calibrationMode", 0);
 }
 
 void hack_user_init(jl_t* jlc) {
@@ -182,5 +190,6 @@ void hack_user_init(jl_t* jlc) {
 	vi_init_ctx(jlc);
 	vi_init_vos(jlc);
 	vi_init_cv(jlc);
+	vi_init_net(jlc);
 	jl_io_close_block(jlc);
 }

@@ -1,6 +1,4 @@
 #include "jl_ntcore.h"
-#define HOSTNAME ""
-#define HOSTNAME ""
 
 /*static inline void jl_ntcore_loadntcore(jl_ntcore_t* jl_ntcore) {
 	if(!(jl_ntcore->ntcore = dlopen("libntcore.so", RTLD_NOW | RTLD_GLOBAL))) {
@@ -25,7 +23,23 @@ void jl_ntcore_push_num(jl_ntcore_t* jl_ntcore, str_t name, f32_t value) {
 	NT_SetEntryDouble(name, strlen(name), value, 1);
 }
 
+void jl_ntcore_push_bool(jl_ntcore_t* jl_ntcore, str_t name, u8_t value) {
+	NT_SetEntryBoolean(name, strlen(name), value, 1);
+}
+
+void jl_ntcore_push_data(jl_ntcore_t* jl_ntcore, str_t name, void* data,
+	u32_t datasize)
+{
+	NT_SetEntryRaw(name, strlen(name), data, datasize, 1);
+}
+
+u8_t jl_ntcore_pull_bool(jl_ntcore_t* jl_ntcore, str_t name) {
+	int boolean;
+	NT_GetEntryBoolean(name, strlen(name), NULL, &boolean);
+	return boolean;
+}
+
 void jl_ntcore_kill(jl_ntcore_t* jl_ntcore) {
 	NT_StopClient();
-	dlclose(jl_ntcore->ntcore);
+//	dlclose(jl_ntcore->ntcore);
 }
