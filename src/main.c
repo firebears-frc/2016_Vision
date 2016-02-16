@@ -80,8 +80,10 @@ static inline void vi_push(jl_t* jlc) {
 	jl_ntcore_push_num(ctx->jl_ntcore, "vision/angle", (double)ctx->movex);
 	jl_ntcore_push_num(ctx->jl_ntcore, "vision/fps",
 		(double)(1./jlc->psec));
-	if(jl_ntcore_pull_bool(ctx->jl_ntcore, "calibrationMode") {
-		jl_ntcore_push_data(ctx->jl_ntcore, "image", );
+	if(jl_ntcore_pull_bool(ctx->jl_ntcore, "calibrationMode")) {
+		void* dat = NULL;
+		int datsize = jlc->info;
+		jl_ntcore_push_data(ctx->jl_ntcore, "image", dat, datsize);
 	}
 }
 
@@ -180,9 +182,8 @@ static inline void vi_init_net(jl_t* jlc) {
 	jl_ntcore_push_bool(vi->jl_ntcore, "vision/calibrationMode", 0);
 }
 
-void hack_user_init(jl_t* jlc) {
-	jl_io_tag_set(jlc, 0, 1, NULL);
-	jl_io_offset(jlc, 0, "EXMP");
+void vi_init(jl_t* jlc) {
+	jl_io_function(jlc, "2846_Vision");
 	jl_gr_draw_msge(jlc, 0, JL_IMGI_ICON, 1, "Initializing");
 	jl_io_printc(jlc,"Initializing....\n");
 	vi_init_modes(jlc);
@@ -191,5 +192,9 @@ void hack_user_init(jl_t* jlc) {
 	vi_init_vos(jlc);
 	vi_init_cv(jlc);
 	vi_init_net(jlc);
-	jl_io_close_block(jlc);
+	jl_io_return(jlc, "2846_Vision");
+}
+
+int main(int argc, char* argv[]) {
+	jl_init(vi_init);
 }
