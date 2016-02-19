@@ -91,6 +91,7 @@ jl_cv_t* jl_cv_init(jl_t* jlc) {
 	jl_cv->storage = cvCreateMemStorage(0);
 	jl_cv->element = cvCreateStructuringElementEx(3, 3, 0, 0,
 		CV_SHAPE_CROSS, NULL);
+	jl_cv->jpeg = jl_me_strt_make(0);
 	return jl_cv;
 }
 
@@ -300,4 +301,34 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 		jl_cv->disp_image->height, 3);
 	return ((double)jl_cv->disp_image->height) /
 		((double)jl_cv->disp_image->width);
+}
+
+/**
+ * Make a frame from the image in the opencv buffer
+ * @param jl_cv: JL_CV context.
+ * @returns the data.
+**/
+strt jl_cv_loop_makejf(jl_cv_t* jl_cv) {
+	jl_t* jlc = jl_cv->jlc;
+	uint32_t w = jl_cv->disp_image->width;
+	uint32_t h = jl_cv->disp_image->height;
+	strt jpeg = jl_vi_make_jpeg(jlc,10,(void*)jl_cv->disp_image->imageData,
+		w,h);
+//	uint32_t l = jpeg->size;
+
+	jl_io_print(jlc, "w:%d...h%d", w, h);
+	jl_cv_getoutput(jl_cv);
+	// Clear the final string.
+	jl_me_strt_clear(jlc, jl_cv->jpeg);
+	// Add w
+//	jl_io_print(jlc, "length: %d", jl_cv->jpeg->size);
+//	jl_me_strt_insert_data(jlc, jl_cv->jpeg, &(l), 4);
+//	jl_io_print(jlc, "length: %d", jl_cv->jpeg->size);
+	// Add h
+//	jl_me_strt_insert_data(jlc, jl_cv->jpeg, &(h), 4);
+	// Add data.
+	jl_me_strt_insert_data(jlc, jl_cv->jpeg, jpeg->data, jpeg->size);
+	// Free temporary string.
+	jl_me_strt_free(jpeg);
+	return jl_cv->jpeg;
 }

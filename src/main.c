@@ -1,8 +1,9 @@
 #include "header/main.h"
 #define TEST
 #ifdef TEST
-	#define HOSTNAME "10.30.13.113"
-	#define VI_WEBCAM 0
+	#define HOSTNAME "roborio-2846-frc.local"
+//	#define HOSTNAME "10.0.0.5"
+	#define VI_WEBCAM 1
 	#define HEADLESS
 #else
 	#define HOSTNAME "roborio-2846-frc.local"
@@ -25,12 +26,12 @@ int shape[] = {
 };
 m_u8_t color[] = { 127, 255, 127, 255 };
 
-#define MEMTESTER(a, b) // memtester(a, b  )
-/*void memtester(jl_t* jlc, str_t name) {
+#define MEMTESTER(a, b) //memtester(a, b  )
+void memtester(jl_t* jlc, str_t name) {
 	int diff = jl_me_tbiu() - oldtbiu;
 	printf("%s %d\n", name, diff);
 	oldtbiu = jl_me_tbiu();
-}*/
+}
 
 static inline void vi_redraw(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
@@ -75,16 +76,23 @@ void vi_get_input(ctx_t* ctx) {
 static inline void vi_push(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 
-	jl_ntcore_push_num(ctx->jl_ntcore, "vision/distance",
+	MEMTESTER(jlc, "nt start");
+	jl_nt_push_num(ctx->jl_nt, NT_DISTANCE,
 		(double)ctx->targetz);
-	jl_ntcore_push_num(ctx->jl_ntcore, "vision/angle", (double)ctx->movex);
-	jl_ntcore_push_num(ctx->jl_ntcore, "vision/fps",
+	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)ctx->movex);
+	jl_nt_push_num(ctx->jl_nt, NT_FPS,
 		(double)(1./jlc->psec));
-	if(jl_ntcore_pull_bool(ctx->jl_ntcore, "calibrationMode")) {
-		void* dat = NULL;
-		int datsize = jlc->info;
-		jl_ntcore_push_data(ctx->jl_ntcore, "image", dat, datsize);
-	}
+//	if(jl_nt_pull_bool(ctx->jl_nt, NT_CALIBRATION)) {
+//		jl_io_print(jlc, "on");
+	MEMTESTER(jlc, "push_data_start");
+		strt push_data = jl_cv_loop_makejf(ctx->jl_cv);
+	MEMTESTER(jlc, "push_data_start2");
+		jl_nt_push_data(ctx->jl_nt, NT_IMG, push_data->data,
+			push_data->size);
+	MEMTESTER(jlc, "push_data_finish");
+//	}else{
+//		jl_io_print(jlc, "off");
+//	}
 }
 
 static inline void vi_loop(jl_t* jlc) {
@@ -94,8 +102,10 @@ static inline void vi_loop(jl_t* jlc) {
 	uint8_t bounds[] = {20, 200, 90, 40, 255, 180};
 	int maxw = 0, maxi = 0;
 
+	MEMTESTER(jlc, "loop");
 // Read image
 	vi_get_input(ctx);
+	MEMTESTER(jlc, "read_image");
 // Filter colors
 	jl_cv_loop_filter(ctx->jl_cv, bounds);
 // Erode Blobs
@@ -103,6 +113,7 @@ static inline void vi_loop(jl_t* jlc) {
 // Blob Detect
 	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
 // Find the Best Blob
+	MEMTESTER(jlc, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
 		if(blobs[i].w > maxw) {
 			maxw = blobs[i].w;
@@ -116,6 +127,7 @@ static inline void vi_loop(jl_t* jlc) {
 	ctx->targetz = (100 * ctx->imgy / ctx->target.y) - 100;
 	ctx->movex = ctx->targetx - (ctx->imgx / 2);
 	ctx->movey = ctx->targety - (ctx->imgy / 2);
+	MEMTESTER(jlc, "find_blob");
 }
 
 void vi_wdns(jl_t* jlc) {
@@ -154,7 +166,7 @@ static inline void vi_init_ctx(jl_t* jlc) {
 	jl_me_alloc(jlc, &jlc->uctx, sizeof(ctx_t), 0);
 	ctx_t* ctx = jlc->uctx;
 	ctx->jl_cv = jl_cv_init(jlc);
-	ctx->jl_ntcore = jl_ntcore_init(jlc, HOSTNAME);
+	ctx->jl_nt = jl_nt_init(jlc, HOSTNAME);
 	ctx->font = (jl_font_t) { 0, JL_IMGI_ICON, 0,
 		color, .025f };
 }
@@ -179,13 +191,13 @@ static inline void vi_init_cv(jl_t* jlc) {
 
 static inline void vi_init_net(jl_t* jlc) {
 	ctx_t* vi = jlc->uctx;
-	jl_ntcore_push_bool(vi->jl_ntcore, "vision/calibrationMode", 0);
+	jl_nt_push_bool(vi->jl_nt, NT_CALIBRATION, 0);
 }
 
 void vi_init(jl_t* jlc) {
 	jl_io_function(jlc, "2846_Vision");
 	jl_gr_draw_msge(jlc, 0, JL_IMGI_ICON, 1, "Initializing");
-	jl_io_printc(jlc,"Initializing....\n");
+	jl_io_printc(jlc,"Initializing....");
 	vi_init_modes(jlc);
 	vi_init_tasks(jlc);
 	vi_init_ctx(jlc);
