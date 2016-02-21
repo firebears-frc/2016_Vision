@@ -1,8 +1,8 @@
 #include "header/main.h"
-#define TEST
+//#define TEST
 #ifdef TEST
-	#define HOSTNAME "roborio-2846-frc.local"
 //	#define HOSTNAME "10.0.0.5"
+	#define HOSTNAME "10.30.21.108"
 	#define VI_WEBCAM 1
 	#define HEADLESS
 #else
@@ -81,7 +81,7 @@ static inline void vi_push(jl_t* jlc) {
 		(double)ctx->targetz);
 	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)ctx->movex);
 	jl_nt_push_num(ctx->jl_nt, NT_FPS,
-		(double)(1./jlc->psec));
+		(double)(1./jlc->time.psec));
 //	if(jl_nt_pull_bool(ctx->jl_nt, NT_CALIBRATION)) {
 //		jl_io_print(jlc, "on");
 	MEMTESTER(jlc, "push_data_start");
@@ -99,7 +99,17 @@ static inline void vi_loop(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
-	uint8_t bounds[] = {20, 200, 90, 40, 255, 180};
+#ifdef TEST
+	uint8_t bounds[] = { 20, 200, 90, 40, 255, 180 };
+#else
+	uint8_t bounds[] = {
+		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.lo", 20),
+		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.lo", 200),
+		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.lo", 90),
+		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.hi", 40),
+		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.hi", 255),
+		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.hi", 180) };
+#endif
 	int maxw = 0, maxi = 0;
 
 	MEMTESTER(jlc, "loop");
@@ -131,14 +141,16 @@ static inline void vi_loop(jl_t* jlc) {
 }
 
 void vi_wdns(jl_t* jlc) {
+	jl_io_printc(jlc, "Run Frame");
 	vi_loop(jlc);
 	vi_push(jlc);
+#ifndef HEADLESS
 	vi_redraw(jlc);
+#endif
 }
 
 // Called when window is made/resized.
 static void vi_resz(jl_t* jlc) {
-//	ctx_t* ctx = jlc->uctx;
 }
 
 static void vi_exit(jl_t* jlc) {
@@ -150,16 +162,18 @@ static void vi_exit(jl_t* jlc) {
 
 static inline void vi_init_modes(jl_t* jlc) {
 	//Set mode data
-	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_DN, vi_wdns);
-	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_UP, jl_dont);
+	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_LOOP, vi_wdns);
 	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_RESZ, vi_resz);
 	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_EXIT, vi_exit);
-	jl_sg_mode_switch(jlc, VI_MODE_EDIT, JL_SG_WM_DN); //Leave terminal mode
+	//Leave terminal mode
+	jl_sg_mode_switch(jlc, VI_MODE_EDIT, JL_SG_WM_LOOP);
 }
 
-static inline void vi_init_tasks(jl_t* jlc) {
-	jl_gr_addicon_slow(jlc);
+#ifndef HEADLESS
+static inline void vi_init_tasks(jl_gr_t* jl_gr) {
+	jl_gr_addicon_slow(jl_gr);
 }
+#endif
 
 static inline void vi_init_ctx(jl_t* jlc) {
 	jlc->uctx = NULL;
@@ -172,9 +186,11 @@ static inline void vi_init_ctx(jl_t* jlc) {
 }
 
 static inline void vi_init_vos(jl_t* jlc) {
+#ifndef HEADLESS
 	ctx_t* ctx = jlc->uctx;
 
-	ctx->vos = jl_gl_vo_make(jlc, 2);
+	ctx->vos = jl_gl_vo_make(jlc->jl_gr, 2);
+#endif
 }
 
 static inline void vi_init_cv(jl_t* jlc) {
@@ -196,12 +212,16 @@ static inline void vi_init_net(jl_t* jlc) {
 
 void vi_init(jl_t* jlc) {
 	jl_io_function(jlc, "2846_Vision");
+#ifndef HEADLESS
 	jl_gr_draw_msge(jlc, 0, JL_IMGI_ICON, 1, "Initializing");
 	jl_io_printc(jlc,"Initializing....");
+#endif
 	vi_init_modes(jlc);
-	vi_init_tasks(jlc);
 	vi_init_ctx(jlc);
+#ifndef HEADLESS
+	vi_init_tasks(jlc->jl_gr);
 	vi_init_vos(jlc);
+#endif
 	vi_init_cv(jlc);
 	vi_init_net(jlc);
 	jl_io_return(jlc, "2846_Vision");

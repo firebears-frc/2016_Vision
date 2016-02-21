@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct{
 	jl_t* jlc;
+	jl_gr_t* jl_gr;
 	CvCapture* camera;
 	IplImage* image;
 	IplImage* image_hsv;
@@ -39,6 +40,7 @@ typedef struct{
 	m_u8_t convertdone;
 	m_i8_t flip;
 	jl_tex_t textures[1]; // Textures.
+	m_u8_t texturesinited;
 	CvMemStorage* storage;
 	IplConvKernel* element;
 	strt jpeg;

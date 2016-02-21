@@ -87,11 +87,13 @@ jl_cv_t* jl_cv_init(jl_t* jlc) {
 	jl_cv_t* jl_cv = NULL;
 	jl_me_alloc(jlc, (void**)&jl_cv, sizeof(jl_cv_t), 0);
 	jl_cv->jlc = jlc;
+	jl_cv->jl_gr = jlc->jl_gr;
 	jl_cv->image = NULL;
 	jl_cv->storage = cvCreateMemStorage(0);
 	jl_cv->element = cvCreateStructuringElementEx(3, 3, 0, 0,
 		CV_SHAPE_CROSS, NULL);
 	jl_cv->jpeg = jl_me_strt_make(0);
+	jl_cv->texturesinited = 0;
 	return jl_cv;
 }
 
@@ -110,10 +112,6 @@ void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f) {
 	jl_cv_webcam_get__(jl_cv);
 	jl_cv_hsv_init__(jl_cv);
 	jl_cv->output = output;
-	jl_gl_pbo_new(jl_cv->jlc, &(jl_cv->textures[0]),
-		(void*)jl_cv->image->imageData,
-		jl_cv->image->width,
-		jl_cv->image->height, 3);
 }
 
 void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname,
@@ -123,10 +121,6 @@ void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname,
 	jl_cv_image_get__(jl_cv, fname);
 	jl_cv_hsv_init__(jl_cv);
 	jl_cv->output = output;
-	jl_gl_pbo_new(jl_cv->jlc, &(jl_cv->textures[0]),
-		(void*)jl_cv->image->imageData,
-		jl_cv->image->width,
-		jl_cv->image->height, 3);
 }
 
 void jl_cv_loop_webcam(jl_cv_t* jl_cv) {
@@ -294,8 +288,16 @@ void jl_cv_img_size(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h) {
 **/
 double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 	jl_cv_getoutput(jl_cv);
+	//
+	if(jl_cv->texturesinited == 0) {
+		jl_gl_pbo_new(jl_cv->jlc->jl_gr, &(jl_cv->textures[0]),
+			(void*)jl_cv->image->imageData,
+			jl_cv->image->width,
+			jl_cv->image->height, 3);
+		jl_cv->texturesinited = 1;
+	}
 	// Update the output image in a texture.
-	jl_gl_pbo_set(jl_cv->jlc, &(jl_cv->textures[0]),
+	jl_gl_pbo_set(jl_cv->jl_gr, &(jl_cv->textures[0]),
 		(void*)jl_cv->disp_image->imageData,
 		jl_cv->disp_image->width,
 		jl_cv->disp_image->height, 3);
@@ -312,8 +314,8 @@ strt jl_cv_loop_makejf(jl_cv_t* jl_cv) {
 	jl_t* jlc = jl_cv->jlc;
 	uint32_t w = jl_cv->disp_image->width;
 	uint32_t h = jl_cv->disp_image->height;
-	strt jpeg = jl_vi_make_jpeg(jlc,10,(void*)jl_cv->disp_image->imageData,
-		w,h);
+	strt jpeg = jl_vi_make_jpeg(jlc, 10, 
+		(void*)jl_cv->disp_image->imageData, w, h);
 //	uint32_t l = jpeg->size;
 
 	jl_io_print(jlc, "w:%d...h%d", w, h);
