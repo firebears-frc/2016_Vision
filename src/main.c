@@ -6,8 +6,9 @@
 	#define VI_WEBCAM 1
 	#define HEADLESS
 #else
-	#define HOSTNAME "roborio-2846-frc.local"
-	#define VI_WEBCAM 1
+	#define HOSTNAME "10.30.21.108"
+//	#define HOSTNAME "roborio-2846-frc.local"
+	#define VI_WEBCAM 0
 	#define HEADLESS
 #endif
 
@@ -18,11 +19,6 @@ int shape[] = {
 	1, 0, 0, 0, 1,
 	1, 0, 0, 0, 1,
 	1, 1, 1, 1, 1
-/*	0, 1, 1, 1, 0,
-	0, 1, 1, 1, 0,
-	0, 1, 1, 1, 0,
-	0, 1, 1, 1, 0,
-	0, 0, 0, 0, 0*/
 };
 m_u8_t color[] = { 127, 255, 127, 255 };
 
@@ -143,6 +139,7 @@ static inline void vi_loop(jl_t* jlc) {
 void vi_wdns(jl_t* jlc) {
 	jl_io_printc(jlc, "Run Frame");
 	vi_loop(jlc);
+	jl_io_printc(jlc, "Vi push");
 	vi_push(jlc);
 #ifndef HEADLESS
 	vi_redraw(jlc);
@@ -229,4 +226,5 @@ void vi_init(jl_t* jlc) {
 
 int main(int argc, char* argv[]) {
 	jl_init(vi_init);
+	return -1;
 }
