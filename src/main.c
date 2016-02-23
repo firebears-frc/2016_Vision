@@ -8,7 +8,7 @@
 #else
 	#define HOSTNAME "10.30.21.108"
 //	#define HOSTNAME "roborio-2846-frc.local"
-	#define VI_WEBCAM 0
+	#define VI_WEBCAM 1
 	#define HEADLESS
 #endif
 
