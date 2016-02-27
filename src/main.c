@@ -1,16 +1,11 @@
 #include "header/main.h"
-//#define TEST
-#ifdef TEST
-//	#define HOSTNAME "10.0.0.5"
-	#define HOSTNAME "10.30.21.108"
-	#define VI_WEBCAM 1
-	#define HEADLESS
-#else
-//	#define HOSTNAME "10.30.21.233"
-	#define HOSTNAME "roborio-2846-frc.local"
-	#define VI_WEBCAM 1
-	#define HEADLESS
-#endif
+
+// Compile settings
+#define TEST 0
+#define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
+#define VI_WEBCAM 1
+#define WINDOWED 1
+#define PHOTO_CAPTURE 1
 
 int oldtbiu = 0;
 int shape[] = {
@@ -31,7 +26,7 @@ void memtester(jl_t* jlc, str_t name) {
 
 static inline void vi_redraw(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
-#ifndef HEADLESS
+#if WINDOWED == 1
 	double ar;
 #endif
 
@@ -46,7 +41,7 @@ static inline void vi_redraw(jl_t* jlc) {
 		cvPoint(ctx->targetx,ctx->targety-drawsize),
 		cvPoint(ctx->targetx,ctx->targety+drawsize)});
 	// Change to image
-#ifndef HEADLESS
+#if WINDOWED == 1
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
 	jl_gr_vos_texture(jlc->jl_gr, &(ctx->vos[0]),
 		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc->jl_gr) },
@@ -80,12 +75,23 @@ static inline void vi_push(jl_t* jlc) {
 		(double)(1./jlc->time.psec));
 //	if(jl_nt_pull_bool(ctx->jl_nt, NT_CALIBRATION)) {
 //		jl_io_print(jlc, "on");
+#ifdef OLD_CRAP
 	MEMTESTER(jlc, "push_data_start");
 		strt push_data = jl_cv_loop_makejf(ctx->jl_cv);
 	MEMTESTER(jlc, "push_data_start2");
 		jl_nt_push_data(ctx->jl_nt, NT_IMG, push_data->data,
 			push_data->size);
 	MEMTESTER(jlc, "push_data_finish");
+#endif
+#if PHOTO_CAPTURE == 1
+	strt push_data = jl_cv_loop_makejf(ctx->jl_cv);
+	time_t mytime;
+
+	mytime = time(NULL);
+	jl_fl_save(jlc, push_data->data,
+		jl_me_format(jlc, "!Pic %s.jpeg", ctime(&mytime)),
+		push_data->size);
+#endif
 //	}else{
 //		jl_io_print(jlc, "off");
 //	}
@@ -95,6 +101,12 @@ static inline void vi_loop(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
+<<<<<<< HEAD
+=======
+#if TEST == 1
+	uint8_t bounds[] = { 20, 200, 90, 40, 255, 180 };
+#else
+>>>>>>> 0e0407d383abf250dfe24d28cce09ad80c94a693
 	uint8_t bounds[] = {
 		jl_nt_get_num(ctx->jl_nt, "vision/hue.lo"),
 		jl_nt_get_num(ctx->jl_nt, "vision/sat.lo"),
@@ -138,8 +150,8 @@ static inline void vi_loop(jl_t* jlc) {
 void vi_wdns(jl_t* jlc) {
 	vi_loop(jlc);
 	vi_push(jlc);
-#ifndef HEADLESS
-	vi_redraw(jlc);
+#if WINDOWED == 1
+	jl_gr_loop(jlc->jl_gr, NULL, 0);
 #endif
 }
 
@@ -154,16 +166,23 @@ static void vi_exit(jl_t* jlc) {
 	jl_sg_exit(jlc);
 }
 
+static void vi_mdin(jl_t* jlc) {
+#if WINDOWED == 1
+	jl_gr_loop_set(jlc->jl_gr, vi_redraw, jl_dont, vi_redraw);
+#endif
+}
+
 static inline void vi_init_modes(jl_t* jlc) {
 	//Set mode data
+	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_INIT, vi_mdin);
 	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_LOOP, vi_wdns);
 	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_RESZ, vi_resz);
 	jl_sg_mode_set(jlc,VI_MODE_EDIT, JL_SG_WM_EXIT, vi_exit);
 	//Leave terminal mode
-	jl_sg_mode_switch(jlc, VI_MODE_EDIT, JL_SG_WM_LOOP);
+	jl_sg_mode_switch(jlc, VI_MODE_EDIT);
 }
 
-#ifndef HEADLESS
+#if WINDOWED == 1
 static inline void vi_init_tasks(jl_gr_t* jl_gr) {
 //	jl_gr_addicon_slow(jl_gr);
 }
@@ -180,7 +199,7 @@ static inline void vi_init_ctx(jl_t* jlc) {
 }
 
 static inline void vi_init_vos(jl_t* jlc) {
-#ifndef HEADLESS
+#if WINDOWED == 1
 	ctx_t* ctx = jlc->uctx;
 
 	ctx->vos = jl_gl_vo_make(jlc->jl_gr, 2);
@@ -204,15 +223,22 @@ static inline void vi_init_net(jl_t* jlc) {
 	jl_nt_push_bool(vi->jl_nt, NT_CALIBRATION, 0);
 }
 
-void vi_init(jl_t* jlc) {
+static void vi_init(jl_t* jlc) {
+	jl_gr_t* jl_gr = jl_gr_init(jlc, "2016 Vision", 0);
+
 	jl_io_function(jlc, "2846_Vision");
+<<<<<<< HEAD
 #ifndef HEADLESS
 //	jl_gr_draw_msge(jlc->jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
+=======
+#if WINDOWED == 1
+	jl_gr_draw_msge(jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
+>>>>>>> 0e0407d383abf250dfe24d28cce09ad80c94a693
 	jl_io_printc(jlc,"Initializing....");
 #endif
 	vi_init_modes(jlc);
 	vi_init_ctx(jlc);
-#ifndef HEADLESS
+#if WINDOWED == 1
 	vi_init_tasks(jlc->jl_gr);
 	vi_init_vos(jlc);
 #endif
@@ -221,7 +247,15 @@ void vi_init(jl_t* jlc) {
 	jl_io_return(jlc, "2846_Vision");
 }
 
+static void vi_kill(jl_t* jlc) {
+	jl_gr_kill(jlc->jl_gr);
+}
+
 int main(int argc, char* argv[]) {
+<<<<<<< HEAD
 	jl_init(vi_init);
 	return -1;
+=======
+	jl_init(vi_init, vi_kill);
+>>>>>>> 0e0407d383abf250dfe24d28cce09ad80c94a693
 }
