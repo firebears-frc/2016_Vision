@@ -194,8 +194,8 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 		1,			// Distance resolution (in pixels)
 		CV_PI/25,		// Angle resolution (in radians)
 		filter_out,		// Accumulator threshold parameter
-		minlen,			// Minimum line length
-		minlen*2,		// Max gap between line seg.s to join.
+//		minlen,			// Minimum line length
+//		minlen*2,		// Max gap between line seg.s to join.
 		0, CV_PI		// Default Range in C++
 	);
 	count = lines->total >= max_rtn ? max_rtn : lines->total;

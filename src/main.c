@@ -48,14 +48,14 @@ static inline void vi_redraw(jl_t* jlc) {
 	// Change to image
 #ifndef HEADLESS
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
-	jl_gr_vos_texture(jlc, &(ctx->vos[0]),
-		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc) },
+	jl_gr_vos_texture(jlc->jl_gr, &(ctx->vos[0]),
+		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc->jl_gr) },
 		&(ctx->jl_cv->textures[0]), 0, 255);
-	jl_gr_draw_vo(jlc, &(ctx->vos[0]), NULL);
-	jl_gr_draw_text(jlc, jl_me_format(jlc, "x:%d, y:%d, z:%d",
+	jl_gr_draw_vo(jlc->jl_gr, &(ctx->vos[0]), NULL);
+	jl_gr_draw_text(jlc->jl_gr, jl_me_format(jlc, "x:%d, y:%d, z:%d",
 			ctx->targetx, ctx->targety, ctx->targetz),
 		(jl_vec3_t) { 0., 0., 0. }, ctx->font);
-	jl_gr_draw_text(jlc, jl_me_format(jlc, "movex:%d, movey:%d",
+	jl_gr_draw_text(jlc->jl_gr, jl_me_format(jlc, "movex:%d, movey:%d",
 			ctx->movex, ctx->movey),
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
 #endif
@@ -96,12 +96,12 @@ static inline void vi_loop(jl_t* jlc) {
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
 	uint8_t bounds[] = {
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.lo", 20),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.lo", 200),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.lo", 90),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.hi", 40),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.hi", 255),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.hi", 180) };
+		jl_nt_get_num(ctx->jl_nt, "vision/hue.lo"),
+		jl_nt_get_num(ctx->jl_nt, "vision/sat.lo"),
+		jl_nt_get_num(ctx->jl_nt, "vision/val.lo"),
+		jl_nt_get_num(ctx->jl_nt, "vision/hue.hi"),
+		jl_nt_get_num(ctx->jl_nt, "vision/sat.hi"),
+		jl_nt_get_num(ctx->jl_nt, "vision/val.hi") };
 	int maxw = 0, maxi = 0;
 
 	jl_io_print(jlc, "%d/%d/%d %d/%d/%d", bounds[0], bounds[1], bounds[2],
@@ -136,9 +136,7 @@ static inline void vi_loop(jl_t* jlc) {
 }
 
 void vi_wdns(jl_t* jlc) {
-	jl_io_printc(jlc, "Run Frame");
 	vi_loop(jlc);
-	jl_io_printc(jlc, "Vi push");
 	vi_push(jlc);
 #ifndef HEADLESS
 	vi_redraw(jlc);
@@ -167,7 +165,7 @@ static inline void vi_init_modes(jl_t* jlc) {
 
 #ifndef HEADLESS
 static inline void vi_init_tasks(jl_gr_t* jl_gr) {
-	jl_gr_addicon_slow(jl_gr);
+//	jl_gr_addicon_slow(jl_gr);
 }
 #endif
 
@@ -193,7 +191,7 @@ static inline void vi_init_cv(jl_t* jlc) {
 	ctx_t* vi = jlc->uctx;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(vi->jl_cv, JL_CV_CHNG, JL_CV_FLIPY);
+	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
 #else
 	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
 		JL_CV_FLIPN);
@@ -209,7 +207,7 @@ static inline void vi_init_net(jl_t* jlc) {
 void vi_init(jl_t* jlc) {
 	jl_io_function(jlc, "2846_Vision");
 #ifndef HEADLESS
-	jl_gr_draw_msge(jlc, 0, JL_IMGI_ICON, 1, "Initializing");
+//	jl_gr_draw_msge(jlc->jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
 	jl_io_printc(jlc,"Initializing....");
 #endif
 	vi_init_modes(jlc);
