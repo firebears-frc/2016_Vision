@@ -6,8 +6,8 @@
 	#define VI_WEBCAM 1
 	#define HEADLESS
 #else
-	#define HOSTNAME "10.30.21.108"
-//	#define HOSTNAME "roborio-2846-frc.local"
+//	#define HOSTNAME "10.30.21.233"
+	#define HOSTNAME "roborio-2846-frc.local"
 	#define VI_WEBCAM 1
 	#define HEADLESS
 #endif
@@ -95,9 +95,6 @@ static inline void vi_loop(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
-#ifdef TEST
-	uint8_t bounds[] = { 20, 200, 90, 40, 255, 180 };
-#else
 	uint8_t bounds[] = {
 		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.lo", 20),
 		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.lo", 200),
@@ -105,9 +102,10 @@ static inline void vi_loop(jl_t* jlc) {
 		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.hi", 40),
 		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.hi", 255),
 		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.hi", 180) };
-#endif
 	int maxw = 0, maxi = 0;
 
+	jl_io_print(jlc, "%d/%d/%d %d/%d/%d", bounds[0], bounds[1], bounds[2],
+		bounds[3], bounds[4], bounds[5]);
 	MEMTESTER(jlc, "loop");
 // Read image
 	vi_get_input(ctx);
@@ -119,6 +117,7 @@ static inline void vi_loop(jl_t* jlc) {
 // Blob Detect
 	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
 // Find the Best Blob
+	if(ctx->item_count == 0) return;
 	MEMTESTER(jlc, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
 		if(blobs[i].w > maxw) {
@@ -194,7 +193,7 @@ static inline void vi_init_cv(jl_t* jlc) {
 	ctx_t* vi = jlc->uctx;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
+	jl_cv_init_webcam(vi->jl_cv, JL_CV_CHNG, JL_CV_FLIPY);
 #else
 	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
 		JL_CV_FLIPN);
