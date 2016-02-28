@@ -1,11 +1,18 @@
 #include "header/main.h"
 
-// Compile settings
-#define TEST 0
+// Test settings
+#define TEST 1
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
-#define VI_WEBCAM 1
+#define VI_WEBCAM 0
 #define WINDOWED 1
-#define PHOTO_CAPTURE 1
+#define PHOTO_CAPTURE 0
+
+// Release settings
+/*#define TEST 0
+#define HOSTNAME "roborio-2846-frc.local" //"10.30.21.108"
+#define VI_WEBCAM 1
+#define WINDOWED 0
+#define PHOTO_CAPTURE 0*/
 
 int oldtbiu = 0;
 int shape[] = {
@@ -101,12 +108,9 @@ static inline void vi_loop(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
-<<<<<<< HEAD
-=======
 #if TEST == 1
 	uint8_t bounds[] = { 20, 200, 90, 40, 255, 180 };
 #else
->>>>>>> 0e0407d383abf250dfe24d28cce09ad80c94a693
 	uint8_t bounds[] = {
 		jl_nt_get_num(ctx->jl_nt, "vision/hue.lo"),
 		jl_nt_get_num(ctx->jl_nt, "vision/sat.lo"),
@@ -114,6 +118,7 @@ static inline void vi_loop(jl_t* jlc) {
 		jl_nt_get_num(ctx->jl_nt, "vision/hue.hi"),
 		jl_nt_get_num(ctx->jl_nt, "vision/sat.hi"),
 		jl_nt_get_num(ctx->jl_nt, "vision/val.hi") };
+#endif
 	int maxw = 0, maxi = 0;
 
 	jl_io_print(jlc, "%d/%d/%d %d/%d/%d", bounds[0], bounds[1], bounds[2],
@@ -212,7 +217,7 @@ static inline void vi_init_cv(jl_t* jlc) {
 #if VI_WEBCAM == 1
 	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
 #else
-	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
+	jl_cv_init_image(vi->jl_cv, JL_CV_ORIG, "Field_Images/0.jpg",
 		JL_CV_FLIPN);
 #endif
 	jl_cv_img_size(vi->jl_cv, &vi->imgx, &vi->imgy);
@@ -224,22 +229,19 @@ static inline void vi_init_net(jl_t* jlc) {
 }
 
 static void vi_init(jl_t* jlc) {
+#if WINDOWED == 1
 	jl_gr_t* jl_gr = jl_gr_init(jlc, "2016 Vision", 0);
+#endif
 
 	jl_io_function(jlc, "2846_Vision");
-<<<<<<< HEAD
-#ifndef HEADLESS
-//	jl_gr_draw_msge(jlc->jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
-=======
 #if WINDOWED == 1
-	jl_gr_draw_msge(jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
->>>>>>> 0e0407d383abf250dfe24d28cce09ad80c94a693
-	jl_io_printc(jlc,"Initializing....");
+//	jl_gr_draw_msge(jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
+//	jl_io_printc(jlc,"Initializing....");
 #endif
 	vi_init_modes(jlc);
 	vi_init_ctx(jlc);
 #if WINDOWED == 1
-	vi_init_tasks(jlc->jl_gr);
+	vi_init_tasks(jl_gr);
 	vi_init_vos(jlc);
 #endif
 	vi_init_cv(jlc);
@@ -252,10 +254,5 @@ static void vi_kill(jl_t* jlc) {
 }
 
 int main(int argc, char* argv[]) {
-<<<<<<< HEAD
-	jl_init(vi_init);
-	return -1;
-=======
-	jl_init(vi_init, vi_kill);
->>>>>>> 0e0407d383abf250dfe24d28cce09ad80c94a693
+	return jl_init(vi_init, vi_kill);
 }
