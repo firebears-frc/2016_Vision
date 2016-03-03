@@ -314,7 +314,7 @@ strt jl_cv_loop_makejf(jl_cv_t* jl_cv) {
 	jl_t* jlc = jl_cv->jlc;
 	uint32_t w = jl_cv->disp_image->width;
 	uint32_t h = jl_cv->disp_image->height;
-	strt jpeg = jl_vi_make_jpeg(jlc, 10, 
+	strt jpeg = jl_vi_make_jpeg(jlc, 100, 
 		(void*)jl_cv->disp_image->imageData, w, h);
 //	uint32_t l = jpeg->size;
 
