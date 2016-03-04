@@ -14,7 +14,7 @@ typedef struct{
 	jl_vo_t* vos;
 	jl_cv_t* jl_cv;
 	jl_nt_t* jl_nt;
-	int item_count;
+	m_u32_t item_count;
 	jl_cv_rect_t target;
 	m_u16_t targetx;
 	m_u16_t targety;

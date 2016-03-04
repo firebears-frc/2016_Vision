@@ -103,7 +103,7 @@ void jl_cv_kill(jl_cv_t* jl_cv) {
 
 void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f) {
 	jl_cv_setf(jl_cv, f);
-	jl_cv->camera = cvCaptureFromCAM(0); // open the default camera id == 0
+	jl_cv->camera = cvCaptureFromCAM(1); // open the default camera id == 0
 	// If webcam can't be opened, then fail
 	if( jl_cv->camera == NULL ) {
 		fprintf(stderr, " Failed to open a Camera\n" );
@@ -211,7 +211,7 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
  * Find the width and height of detected objects.
 **/
 u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_cv_rect_t* rtn_rects){
-	int i, total;
+	int i, total, count;
 	CvSeq *contours = NULL;
 	CvRect rect;
 
@@ -225,7 +225,8 @@ u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_cv_rect_t* rtn_rect
 		CV_CHAIN_APPROX_SIMPLE,
 		cvPoint(0,0)
 	);
-	for(i = 0; i < total; i++) {
+	count = total >= max_rtn ? max_rtn : total;
+	for(i = 0; i < count; i++) {
 		rect = cvBoundingRect(contours, 0);
 		rtn_rects[i] = (jl_cv_rect_t) {
 			rect.x, rect.y, rect.width, rect.height };

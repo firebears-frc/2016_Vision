@@ -1,11 +1,17 @@
 #include "header/main.h"
 
 // Compile settings
-#define TEST 0
+#define TEST 1
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
+#define FILENAME "B.jpeg" // "Field_Images/20.jpg"
 #define VI_WEBCAM 1
 #define WINDOWED 1
 #define PHOTO_CAPTURE 1
+// Don't save JPEGS if not capturing images from a camera.
+#if VI_WEBCAM == 0
+	#undef PHOTO_CAPTURE
+	#define PHOTO_CAPTURE 0
+#endif
 
 int oldtbiu = 0;
 int shape[] = {
@@ -14,6 +20,11 @@ int shape[] = {
 	1, 0, 0, 0, 1,
 	1, 0, 0, 0, 1,
 	1, 1, 1, 1, 1
+/*	0, 1, 1, 1, 0,
+	1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1,
+	0, 1, 1, 1, 0*/
 /*	0, 1, 1, 1, 0,
 	0, 1, 1, 1, 0,
 	0, 1, 1, 1, 0,
@@ -65,7 +76,7 @@ void vi_get_input(ctx_t* ctx) {
 #if VI_WEBCAM == 1
 	jl_cv_loop_webcam(ctx->jl_cv);
 #else
-	jl_cv_loop_image(ctx->jl_cv, "Field_Images/20.jpg");
+	jl_cv_loop_image(ctx->jl_cv, FILENAME);
 #endif
 }
 
@@ -94,7 +105,7 @@ static inline void vi_push(jl_t* jlc) {
 
 	mytime = time(NULL);
 	jl_fl_save(jlc, push_data->data,
-		jl_me_format(jlc, "!Pic %s.jpeg", ctime(&mytime)),
+		jl_me_format(jlc, "!Pic %s\b.jpeg", ctime(&mytime)),
 		push_data->size);
 #endif
 //	}else{
@@ -107,7 +118,8 @@ static inline void vi_loop(jl_t* jlc) {
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
 #if TEST == 1
-	uint8_t bounds[] = { 20, 200, 90, 40, 255, 180 };
+//	uint8_t bounds[] = { 38, 2, 233, 70, 8, 236 };
+	uint8_t bounds[] = { 30, 0, 220, 85, 15, 255 };
 #else
 	uint8_t bounds[] = {
 		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.lo", 20),
@@ -128,7 +140,8 @@ static inline void vi_loop(jl_t* jlc) {
 // Erode Blobs
 	jl_cv_struct_erode(ctx->jl_cv, 5, 5, shape);
 // Blob Detect
-	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
+	u32_t itemc = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
+	ctx->item_count = itemc;
 // Find the Best Blob
 	MEMTESTER(jlc, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
@@ -136,12 +149,12 @@ static inline void vi_loop(jl_t* jlc) {
 			maxw = blobs[i].w;
 			maxi = i;
 		}
-//		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
+		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
 	}
 	ctx->target = blobs[maxi];
 	ctx->targetx = ctx->target.x + (ctx->target.w / 2);
 	ctx->targety = ctx->target.y + (ctx->target.h / 2);
-	ctx->targetz = (100 * ctx->imgy / ctx->target.y) - 100;
+	ctx->targetz = (100 * ctx->imgy / (ctx->target.y+1)) - 100;
 	ctx->movex = ctx->targetx - (ctx->imgx / 2);
 	ctx->movey = ctx->targety - (ctx->imgy / 2);
 	MEMTESTER(jlc, "find_blob");
@@ -197,6 +210,8 @@ static inline void vi_init_ctx(jl_t* jlc) {
 	ctx->jl_nt = jl_nt_init(jlc, HOSTNAME);
 	ctx->font = (jl_font_t) { 0, JL_IMGI_ICON, 0,
 		color, .025f };
+
+	jl_io_print(jlc, "that %p", jlc->uctx);
 }
 
 static inline void vi_init_vos(jl_t* jlc) {
@@ -213,8 +228,7 @@ static inline void vi_init_cv(jl_t* jlc) {
 #if VI_WEBCAM == 1
 	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
 #else
-	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, "Field_Images/0.jpg",
-		JL_CV_FLIPN);
+	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, FILENAME, JL_CV_FLIPN);
 #endif
 	jl_cv_img_size(vi->jl_cv, &vi->imgx, &vi->imgy);
 }
