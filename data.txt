@@ -1,8 +1,8 @@
 	## user-name ##
 jeron
 	## package-name (program-name without spaces) ##
-opencv-example
+2016_Vision
 	## program-name ##
-OpenCV Example
+2016 Vision
 	## build with jl-lib static? ##
 true

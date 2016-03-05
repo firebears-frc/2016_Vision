@@ -101,12 +101,22 @@ void jl_cv_kill(jl_cv_t* jl_cv) {
 	cvReleaseCapture(&(jl_cv->camera));
 }
 
-void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f) {
+/**
+ * Initialize a webcam for streaming.
+ * @param jl_cv: The library context.
+ * @param output: What should be displayed after the filters are applied.
+ * @param f: How the image should be rotated.
+ * @param which: Which webcam to open ( 0 = built-in, 1 = external, unless no
+	built-in camera then, 0 = external)
+**/
+void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f,
+	u32_t which)
+{
 	jl_cv_setf(jl_cv, f);
-	jl_cv->camera = cvCaptureFromCAM(1); // open the default camera id == 0
+	jl_cv->camera = cvCaptureFromCAM(which); // open the camera id
 	// If webcam can't be opened, then fail
 	if( jl_cv->camera == NULL ) {
-		fprintf(stderr, " Failed to open a Camera\n" );
+		jl_io_print(jl_cv->jlc, "Failed to open camera #%d", which);
 		exit(1);
 	}
 	jl_cv_webcam_get__(jl_cv);
@@ -194,8 +204,10 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 		1,			// Distance resolution (in pixels)
 		CV_PI/25,		// Angle resolution (in radians)
 		filter_out,		// Accumulator threshold parameter
+// 2 Lines to comment out on rpi
 		minlen,			// Minimum line length
 		minlen*2,		// Max gap between line seg.s to join.
+//
 		0, CV_PI		// Default Range in C++
 	);
 	count = lines->total >= max_rtn ? max_rtn : lines->total;

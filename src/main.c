@@ -1,12 +1,20 @@
 #include "header/main.h"
 
-// Compile settings
+// Test settings
 #define TEST 1
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
-#define FILENAME "B.jpeg" // "Field_Images/20.jpg"
-#define VI_WEBCAM 1
+#define FILENAME "FieldF.jpeg" // "Field_Images/20.jpg"
+#define VI_WEBCAM 0
 #define WINDOWED 1
-#define PHOTO_CAPTURE 1
+#define PHOTO_CAPTURE 0
+
+// Release settings
+/*#define TEST 0
+#define HOSTNAME "roborio-2846-frc.local" //"10.30.21.108"
+#define VI_WEBCAM 1
+#define WINDOWED 0
+#define PHOTO_CAPTURE 0*/
+
 // Don't save JPEGS if not capturing images from a camera.
 #if VI_WEBCAM == 0
 	#undef PHOTO_CAPTURE
@@ -46,6 +54,7 @@ static inline void vi_redraw(jl_t* jlc) {
 	double ar;
 #endif
 
+#if WINDOWED == 1
 	// Draw target
 	u32_t drawsize = ctx->target.h / 2;
 	jl_cv_draw_circle(ctx->jl_cv, (jl_rect_t) {
@@ -57,7 +66,6 @@ static inline void vi_redraw(jl_t* jlc) {
 		cvPoint(ctx->targetx,ctx->targety-drawsize),
 		cvPoint(ctx->targetx,ctx->targety+drawsize)});
 	// Change to image
-#if WINDOWED == 1
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
 	jl_gr_vos_texture(jlc->jl_gr, &(ctx->vos[0]),
 		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc->jl_gr) },
@@ -89,8 +97,6 @@ static inline void vi_push(jl_t* jlc) {
 	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)ctx->movex);
 	jl_nt_push_num(ctx->jl_nt, NT_FPS,
 		(double)(1./jlc->time.psec));
-//	if(jl_nt_pull_bool(ctx->jl_nt, NT_CALIBRATION)) {
-//		jl_io_print(jlc, "on");
 #ifdef OLD_CRAP
 	MEMTESTER(jlc, "push_data_start");
 		strt push_data = jl_cv_loop_makejf(ctx->jl_cv);
@@ -108,9 +114,6 @@ static inline void vi_push(jl_t* jlc) {
 		jl_me_format(jlc, "!Pic %s\b.jpeg", ctime(&mytime)),
 		push_data->size);
 #endif
-//	}else{
-//		jl_io_print(jlc, "off");
-//	}
 }
 
 static inline void vi_loop(jl_t* jlc) {
@@ -119,18 +122,21 @@ static inline void vi_loop(jl_t* jlc) {
 	jl_cv_rect_t blobs[30];
 #if TEST == 1
 //	uint8_t bounds[] = { 38, 2, 233, 70, 8, 236 };
-	uint8_t bounds[] = { 30, 0, 220, 85, 15, 255 };
+	uint8_t bounds[] = { 38, 2, 234, 78, 8, 236 };
+//	uint8_t bounds[] = { 30, 0, 220, 85, 15, 255 };
 #else
 	uint8_t bounds[] = {
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.lo", 20),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.lo", 200),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.lo", 90),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.hue.hi", 40),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.sat.hi", 255),
-		jl_nt_pull_num(ctx->jl_nt, "Preferences/vision.val.hi", 180) };
+		jl_nt_get_num(ctx->jl_nt, "vision/hue.lo"),
+		jl_nt_get_num(ctx->jl_nt, "vision/sat.lo"),
+		jl_nt_get_num(ctx->jl_nt, "vision/val.lo"),
+		jl_nt_get_num(ctx->jl_nt, "vision/hue.hi"),
+		jl_nt_get_num(ctx->jl_nt, "vision/sat.hi"),
+		jl_nt_get_num(ctx->jl_nt, "vision/val.hi") };
 #endif
 	int maxw = 0, maxi = 0;
 
+	jl_io_print(jlc, "%d/%d/%d %d/%d/%d", bounds[0], bounds[1], bounds[2],
+		bounds[3], bounds[4], bounds[5]);
 	MEMTESTER(jlc, "loop");
 // Read image
 	vi_get_input(ctx);
@@ -143,6 +149,7 @@ static inline void vi_loop(jl_t* jlc) {
 	u32_t itemc = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
 	ctx->item_count = itemc;
 // Find the Best Blob
+	if(ctx->item_count == 0) return;
 	MEMTESTER(jlc, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
 		if(blobs[i].w > maxw) {
@@ -161,7 +168,6 @@ static inline void vi_loop(jl_t* jlc) {
 }
 
 void vi_wdns(jl_t* jlc) {
-	jl_io_printc(jlc, "Run Frame");
 	vi_loop(jlc);
 	vi_push(jlc);
 #if WINDOWED == 1
@@ -198,7 +204,7 @@ static inline void vi_init_modes(jl_t* jlc) {
 
 #if WINDOWED == 1
 static inline void vi_init_tasks(jl_gr_t* jl_gr) {
-	jl_gr_addicon_slow(jl_gr);
+//	jl_gr_addicon_slow(jl_gr);
 }
 #endif
 
@@ -226,7 +232,7 @@ static inline void vi_init_cv(jl_t* jlc) {
 	ctx_t* vi = jlc->uctx;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY);
+	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY, 0);
 #else
 	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, FILENAME, JL_CV_FLIPN);
 #endif
@@ -239,17 +245,19 @@ static inline void vi_init_net(jl_t* jlc) {
 }
 
 static void vi_init(jl_t* jlc) {
+#if WINDOWED == 1
 	jl_gr_t* jl_gr = jl_gr_init(jlc, "2016 Vision", 0);
+#endif
 
 	jl_io_function(jlc, "2846_Vision");
 #if WINDOWED == 1
-	jl_gr_draw_msge(jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
-	jl_io_printc(jlc,"Initializing....");
+//	jl_gr_draw_msge(jl_gr, 0, JL_IMGI_ICON, 1, "Initializing");
+//	jl_io_printc(jlc,"Initializing....");
 #endif
 	vi_init_modes(jlc);
 	vi_init_ctx(jlc);
 #if WINDOWED == 1
-	vi_init_tasks(jlc->jl_gr);
+	vi_init_tasks(jl_gr);
 	vi_init_vos(jlc);
 #endif
 	vi_init_cv(jlc);
@@ -262,5 +270,5 @@ static void vi_kill(jl_t* jlc) {
 }
 
 int main(int argc, char* argv[]) {
-	jl_init(vi_init, vi_kill);
+	return jl_init(vi_init, vi_kill);
 }

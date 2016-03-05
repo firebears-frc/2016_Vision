@@ -1,4 +1,4 @@
-#include "cv.h"
+#include <cv.h>
 #include "highgui.h"
 #include "jl.h"
 
@@ -50,7 +50,8 @@ typedef struct{
 jl_cv_t* jl_cv_init(jl_t* jlc);
 void jl_cv_kill(jl_cv_t* jl_cv);
 // Use the webcam or image
-void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f);
+void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f,
+	u32_t which);
 void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname,
 	jl_cv_flip_t f);
 //
