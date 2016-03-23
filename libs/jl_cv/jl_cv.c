@@ -114,6 +114,9 @@ void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f,
 {
 	jl_cv_setf(jl_cv, f);
 	jl_cv->camera = cvCaptureFromCAM(which); // open the camera id
+	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_EXPOSURE, 0.);
+	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_BRIGHTNESS, 0.);
+	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_GAIN, 0.);
 	// If webcam can't be opened, then fail
 	if( jl_cv->camera == NULL ) {
 		jl_io_print(jl_cv->jlc, "Failed to open camera #%d", which);
@@ -205,8 +208,8 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 		CV_PI/25,		// Angle resolution (in radians)
 		filter_out,		// Accumulator threshold parameter
 // 2 Lines to comment out on rpi
-		minlen,			// Minimum line length
-		minlen*2,		// Max gap between line seg.s to join.
+//		minlen,			// Minimum line length
+//		minlen*2,		// Max gap between line seg.s to join.
 //
 		0, CV_PI		// Default Range in C++
 	);
