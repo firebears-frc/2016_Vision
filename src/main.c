@@ -4,7 +4,7 @@
 #define TEST 1
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
 #define FILENAME "RedLightRingA.jpeg"
-#define VI_WEBCAM 0
+#define VI_WEBCAM 1
 #define WINDOWED 1
 #define PHOTO_CAPTURE 0
 
@@ -52,9 +52,7 @@ static inline void vi_redraw(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 #if WINDOWED == 1
 	double ar;
-#endif
 
-#if WINDOWED == 1
 	// Draw target
 	u32_t drawsize = ctx->target.h / 2;
 	jl_cv_draw_circle(ctx->jl_cv, (jl_rect_t) {
@@ -98,14 +96,6 @@ static inline void vi_push(jl_t* jlc) {
 	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)ctx->movex);
 	jl_nt_push_num(ctx->jl_nt, NT_FPS,
 		(double)(1./jlc->time.psec));
-#ifdef OLD_CRAP
-	MEMTESTER(jlc, "push_data_start");
-		strt push_data = jl_cv_loop_makejf(ctx->jl_cv);
-	MEMTESTER(jlc, "push_data_start2");
-		jl_nt_push_data(ctx->jl_nt, NT_IMG, push_data->data,
-			push_data->size);
-	MEMTESTER(jlc, "push_data_finish");
-#endif
 #if PHOTO_CAPTURE == 1
 	data_t* push_data = jl_cv_loop_makejf(ctx->jl_cv);
 	time_t mytime;
@@ -239,7 +229,7 @@ static inline void vi_init_cv(jl_t* jlc) {
 	ctx_t* vi = jlc->uctx;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(vi->jl_cv, JL_CV_CHNG, JL_CV_FLIPY, 1);
+	jl_cv_init_webcam(vi->jl_cv, JL_CV_CHNG, JL_CV_FLIPY, 0);
 #else
 	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, FILENAME, JL_CV_FLIPN);
 #endif
