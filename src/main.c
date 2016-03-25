@@ -3,8 +3,8 @@
 // Test settings
 #define TEST 1
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
-#define FILENAME "V.jpeg"
-#define VI_WEBCAM 1
+#define FILENAME "RedLightRingA.jpeg"
+#define VI_WEBCAM 0
 #define WINDOWED 1
 #define PHOTO_CAPTURE 0
 
@@ -182,10 +182,6 @@ void vi_wdns(jl_t* jlc) {
 	vi_redraw(jlc);
 }
 
-// Called when window is made/resized.
-static void vi_resz(jl_t* jlc) {
-}
-
 static void vi_exit(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 
@@ -195,7 +191,7 @@ static void vi_exit(jl_t* jlc) {
 
 static void vi_mdin(jl_t* jlc) {
 #if WINDOWED == 1
-	jlgr_loop_set(jlc->jl_gr, vi_wdns, jl_dont, vi_wdns, vi_resz);
+	jlgr_loop_set(jlc->jl_gr, vi_wdns, jl_dont, vi_wdns, jl_dont);
 #endif
 }
 
