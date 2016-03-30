@@ -4,9 +4,9 @@
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
 #define FILENAME "Super.jpeg"
 #define VI_WEBCAM 1
-#define WINDOWED 0
+#define WINDOWED 1
 #define PHOTO_CAPTURE 0
-#define DRAW_TARGET 0
+#define DRAW_TARGET 1
 #define DO_PROCESS 1
 
 // Don't save JPEGS if not capturing images from a camera.
@@ -105,13 +105,17 @@ static inline void vi_process(jl_t* jlc) {
 // With Red Light Ring
 //	uint8_t bounds[] = { 40, 0, 150, 160, 255, 255 };
 // With Green Light Ring
-	uint8_t bounds[] = { 150, 150, 0, 255, 255, 155 };
+	// IronDale
+//	uint8_t bounds[] = { 150, 150, 0, 255, 255, 155 };
+	// Small Engines Room
+	uint8_t bounds[] = { 227, 200, 140, 255, 255, 250 };
+	//
 //	uint8_t bounds[] = { 85, 130, 0, 90, 230, 255 };
 //	uint8_t bounds[] = { 87, 0, 0, 90, 255, 255 };
 //	uint8_t bounds[] = { 0, 0, 150, 255, 230, 255 };
 //	uint8_t bounds[] = { 30, 0, 220, 85, 15, 255 };
 
-	int maxw = 0;
+	int maxh = 0;
 	int maxi = 0;
 
 	MEMTESTER(jlc, "loop");
@@ -130,15 +134,15 @@ static inline void vi_process(jl_t* jlc) {
 	if(ctx->item_count == 0) return;
 	MEMTESTER(jlc, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
-		if(blobs[i].w > maxw) {
-			maxw = blobs[i].w;
+		if(blobs[i].w > maxh) {
+			maxh = blobs[i].h;
 			maxi = i;
 		}
 #if (WINDOWED == 1 ) && ( DRAW_TARGET == 1 )
 		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
 #endif
 	}
-	ctx->size = maxw;
+	ctx->size = maxh;
 	ctx->target = blobs[maxi];
 	ctx->targetx = ctx->target.x + (ctx->target.w / 2);
 	ctx->targety = ctx->target.y + (ctx->target.h / 2);
