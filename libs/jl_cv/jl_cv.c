@@ -113,20 +113,16 @@ void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f,
 {
 	jl_cv_setf(jl_cv, f);
 	jl_cv->camera = cvCaptureFromCAM(which); // open the camera id
-	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_EXPOSURE, 0.);
-	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_BRIGHTNESS, 0.);
-	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_GAIN, 0.);
-//	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_EXPOSURE, 0.);
 
-//	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_ISO_SPEED, 1.);
-//	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_SATURATION, .5);
-//	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_GAIN, 0.);
 	// If webcam can't be opened, then fail
 	if( jl_cv->camera == NULL ) {
 		jl_print(jl_cv->jlc, "Failed to open camera #%d", which);
 		exit(1);
 	}
 	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_BRIGHTNESS, 0.);
+	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_SATURATION, .5);
+	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_FRAME_WIDTH, 200.);
+	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_FRAME_HEIGHT, 200.);
 	jl_cv_webcam_get__(jl_cv);
 	jl_cv_hsv_init__(jl_cv);
 	jl_cv->output = output;
