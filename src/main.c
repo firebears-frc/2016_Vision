@@ -4,9 +4,9 @@
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
 #define FILENAME "Super.jpeg"
 #define VI_WEBCAM 1
-#define WINDOWED 1
+#define WINDOWED 0
 #define PHOTO_CAPTURE 0
-#define DRAW_TARGET 1
+#define DRAW_TARGET 0
 #define DO_PROCESS 1
 
 // Don't save JPEGS if not capturing images from a camera.
@@ -106,9 +106,9 @@ static inline void vi_process(jl_t* jlc) {
 //	uint8_t bounds[] = { 40, 0, 150, 160, 255, 255 };
 // With Green Light Ring
 	// IronDale
-//	uint8_t bounds[] = { 150, 150, 0, 255, 255, 155 };
+	uint8_t bounds[] = { 150, 150, 0, 255, 255, 155 };
 	// Small Engines Room
-	uint8_t bounds[] = { 227, 200, 140, 255, 255, 250 };
+//	uint8_t bounds[] = { 227, 200, 140, 255, 255, 250 };
 	//
 //	uint8_t bounds[] = { 85, 130, 0, 90, 230, 255 };
 //	uint8_t bounds[] = { 87, 0, 0, 90, 255, 255 };
@@ -125,13 +125,15 @@ static inline void vi_process(jl_t* jlc) {
 // Filter colors
 	jl_cv_loop_filter(ctx->jl_cv, bounds);
 // Erode Blobs
-//	jl_cv_struct_erode(ctx->jl_cv, 5, 5, shape);
+	jl_cv_struct_erode(ctx->jl_cv, 5, 5, shape);
 // Blob Detect
 	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
 
-	jl_print(jlc, "FPS = %f, %d, %d, %d", (double)(1./jlc->time.psec), ctx->item_count, ctx->movex, ctx->movey);
 // Find the Best Blob
-	if(ctx->item_count == 0) return;
+	if(ctx->item_count == 0) {
+		ctx->movey = -500;
+		return;
+	}
 	MEMTESTER(jlc, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
 		if(blobs[i].w > maxh) {
@@ -148,6 +150,9 @@ static inline void vi_process(jl_t* jlc) {
 	ctx->targety = ctx->target.y + (ctx->target.h / 2);
 	ctx->movex = ctx->targetx - (ctx->imgx / 2);
 	ctx->movey = ctx->targety - (ctx->imgy / 2);
+
+	jl_print(jlc, "FPS = %f, items = %d, moxex = %d, movey = %d, h = %d", (double)(1./jlc->time.psec), ctx->item_count, ctx->movex, ctx->movey, ctx->size);
+
 	MEMTESTER(jlc, "find_blob");
 }
 
