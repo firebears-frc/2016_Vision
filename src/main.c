@@ -60,9 +60,6 @@ static inline void vi_redraw(jl_t* jlc) {
 		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc->jl_gr) },
 		&(ctx->jl_cv->textures[0]), 0, 255);
 	jl_gr_draw_vo(jlc->jl_gr, &(ctx->vos[0]), NULL);
-//	jl_gr_draw_text(jlc->jl_gr, jl_mem_format(jlc, "x:%d, y:%d, z:%d",
-//			ctx->targetx, ctx->targety, ctx->targetz),
-//		(jl_vec3_t) { 0., 0., 0. }, ctx->font);
 	jl_gr_draw_text(jlc->jl_gr, jl_mem_format(jlc, "movex:%d, movey:%d",
 			ctx->movex, ctx->movey),
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
@@ -82,11 +79,10 @@ static inline void vi_push(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 
 	MEMTESTER(jlc, "nt start");
-	jl_nt_push_num(ctx->jl_nt, NT_DISTANCE,
-		(double)ctx->movey);
-	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)ctx->movex);
-	jl_nt_push_num(ctx->jl_nt, NT_FPS,
-		(double)(1./jlc->time.psec));
+	jl_nt_push_num(ctx->jl_nt, NT_DISTANCE, (double)(ctx->movey));
+	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)(ctx->movex));
+	jl_nt_push_num(ctx->jl_nt, NT_FPS, (double)(1./jlc->time.psec));
+	jl_nt_push_num(ctx->jl_nt, NT_SIZE, (double)(ctx->size));
 #if PHOTO_CAPTURE == 1
 	data_t* push_data = jl_cv_loop_makejf(ctx->jl_cv);
 	time_t mytime;
@@ -142,10 +138,10 @@ static inline void vi_process(jl_t* jlc) {
 		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
 #endif
 	}
+	ctx->size = maxw;
 	ctx->target = blobs[maxi];
 	ctx->targetx = ctx->target.x + (ctx->target.w / 2);
 	ctx->targety = ctx->target.y + (ctx->target.h / 2);
-	ctx->targetz = (100 * ctx->imgy / (ctx->target.y+1)) - 100;
 	ctx->movex = ctx->targetx - (ctx->imgx / 2);
 	ctx->movey = ctx->targety - (ctx->imgy / 2);
 	MEMTESTER(jlc, "find_blob");
