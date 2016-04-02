@@ -293,9 +293,16 @@ void jl_cv_struct_erode(jl_cv_t* jl_cv, int w, int h, int* values) {
 	cvErode(jl_cv->gray_image, jl_cv->gray_image, kernel, 1);
 }
 
-void jl_cv_img_size(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h) {
+/**
+ * Get width, height and pixels of an image.
+**/
+void jl_cv_get_img(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h, m_u8_t** pixels) {
 	if(w) *w = jl_cv->disp_image->width;
 	if(h) *h = jl_cv->disp_image->height;
+	if(pixels) {
+		jl_cv_getoutput(jl_cv);
+		*pixels = (void*)jl_cv->disp_image->imageData;
+	}
 }
 
 /**

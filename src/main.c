@@ -8,6 +8,7 @@
 #define PHOTO_CAPTURE 0
 #define DRAW_TARGET 0
 #define DO_PROCESS 1
+#define VIDEO_STREAM 1
 
 // Don't save JPEGS if not capturing images from a camera.
 #if VI_WEBCAM == 0
@@ -75,6 +76,16 @@ void vi_get_input(ctx_t* ctx) {
 #endif
 }
 
+static inline void vi_stream_video(jl_t* jl) {
+	ctx_t* ctx = jl->uctx;	
+	m_u8_t* pixels = NULL;
+	m_u16_t w = 0;
+	m_u16_t h = 0;
+
+	jl_cv_get_img(ctx->jl_cv, &w, &h, &pixels);
+	jl_nt_push_data(ctx->jl_nt, NT_PIXELS, pixels, w * h * 3);
+}
+
 static inline void vi_push(jl_t* jlc) {
 	ctx_t* ctx = jlc->uctx;
 
@@ -83,6 +94,9 @@ static inline void vi_push(jl_t* jlc) {
 	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)(ctx->movex));
 	jl_nt_push_num(ctx->jl_nt, NT_FPS, (double)(1./jlc->time.psec));
 	jl_nt_push_num(ctx->jl_nt, NT_SIZE, (double)(ctx->size));
+#if VIDEO_STREAM == 1
+	vi_stream_video(jlc);
+#endif
 #if PHOTO_CAPTURE == 1
 	data_t* push_data = jl_cv_loop_makejf(ctx->jl_cv);
 	time_t mytime;
@@ -228,7 +242,9 @@ static inline void vi_init_cv(jl_t* jlc) {
 #else
 	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, FILENAME, JL_CV_FLIPN);
 #endif
-	jl_cv_img_size(vi->jl_cv, &vi->imgx, &vi->imgy);
+	jl_cv_get_img(vi->jl_cv, &vi->imgx, &vi->imgy, NULL);
+	jl_nt_push_num(vi->jl_nt, "video_stream/resw", vi->imgx);
+	jl_nt_push_num(vi->jl_nt, "video_stream/resh", vi->imgy);
 }
 
 #if WINDOWED == 1

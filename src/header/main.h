@@ -8,6 +8,7 @@
 #define NT_ANGLE "vision/angle"
 #define NT_FPS "vision/fps"
 #define NT_SIZE "vision/size"
+#define NT_PIXELS "video_stream/pixels"
 
 typedef struct{
 	jl_vo_t* vos;

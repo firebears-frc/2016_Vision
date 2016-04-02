@@ -69,7 +69,7 @@ void jl_cv_erode(jl_cv_t* jl_cv);
 void jl_cv_skeleton(jl_cv_t* jl_cv, int w, int h, int* values);
 void jl_cv_struct_erode(jl_cv_t* jl_cv, int w, int h, int* values);
 // Get values
-void jl_cv_img_size(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h);
+void jl_cv_get_img(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h, m_u8_t** pixels);
 // Export Ending Image to texture / data.
 double jl_cv_loop_maketx(jl_cv_t* jl_cv);
 data_t* jl_cv_loop_makejf(jl_cv_t* jl_cv);
