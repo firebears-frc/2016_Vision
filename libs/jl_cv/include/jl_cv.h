@@ -25,8 +25,7 @@ typedef struct {
 }jl_cv_rect_t;
 
 typedef struct{
-	jl_t* jlc;
-	jlgr_t* jl_gr;
+	jl_t* jl;
 	CvCapture* camera;
 	IplImage* image;
 	IplImage* image_hsv;
@@ -47,7 +46,7 @@ typedef struct{
 }jl_cv_t;
 
 // Make & Destroy
-jl_cv_t* jl_cv_init(jl_t* jlc);
+jl_cv_t* jl_cv_init(jl_t* jl);
 void jl_cv_kill(jl_cv_t* jl_cv);
 // Use the webcam or image
 void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f,

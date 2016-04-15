@@ -4,7 +4,7 @@
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
 #define FILENAME "Super.jpeg"
 #define VI_WEBCAM 1
-#define WINDOWED 0
+#define WINDOWED 1
 #define PHOTO_CAPTURE 0
 #define DRAW_TARGET 0
 #define DO_PROCESS 1
@@ -48,15 +48,15 @@ m_u8_t color[] = { 127, 255, 127, 255 };
 uint8_t bounds[6];
 
 #define MEMTESTER(a, b) //memtester(a, b  )
-void memtester(jl_t* jlc, str_t name) {
+void memtester(jl_t* jl, str_t name) {
 	int diff = jl_mem_tbiu() - oldtbiu;
 	printf("%s %d\n", name, diff);
 	oldtbiu = jl_mem_tbiu();
 }
 
-static inline void vi_redraw(jl_t* jlc) {
+static inline void vi_redraw(jl_t* jl) {
 #if WINDOWED == 1
-	ctx_t* ctx = jlc->prg_context;
+	ctx_t* ctx = jl->prg_context;
 	double ar;
 
 #if DRAW_TARGET == 1
@@ -73,14 +73,14 @@ static inline void vi_redraw(jl_t* jlc) {
 #endif
 	// Change to image
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
-	jl_gr_vos_texture(jlc->jl_gr, &(ctx->vos[0]),
-		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jlc->jl_gr) },
+	jlgr_vos_texture(jl->jlgr, &(ctx->vos[0]),
+		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jl->jlgr) },
 		&(ctx->jl_cv->textures[0]), 0, 255);
-	jl_gr_draw_vo(jlc->jl_gr, &(ctx->vos[0]), NULL);
-	jl_gr_draw_text(jlc->jl_gr, jl_mem_format(jlc, "movex:%d, movey:%d",
+	jlgr_draw_vo(jl->jlgr, &(ctx->vos[0]), NULL);
+	jlgr_draw_text(jl->jlgr, jl_mem_format(jl, "movex:%d, movey:%d",
 			ctx->movex, ctx->movey),
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
-	jl_print(jlc, "Drew screen");
+	jl_print(jl, "Drew screen");
 #endif
 }
 
@@ -102,40 +102,40 @@ static inline void vi_stream_video(jl_t* jl) {
 	jl_nt_push_data(ctx->jl_nt, NT_PIXELS, pixels, w * h * 3);
 }
 
-static inline void vi_push(jl_t* jlc) {
-	ctx_t* ctx = jlc->prg_context;
+static inline void vi_push(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
 
-	MEMTESTER(jlc, "nt start");
+	MEMTESTER(jl, "nt start");
 	jl_nt_push_num(ctx->jl_nt, NT_DISTANCE, (double)(ctx->movey));
 	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)(ctx->movex));
-	jl_nt_push_num(ctx->jl_nt, NT_FPS, (double)(1./jlc->time.psec));
+	jl_nt_push_num(ctx->jl_nt, NT_FPS, (double)(1./jl->time.psec));
 	jl_nt_push_num(ctx->jl_nt, NT_SIZE, (double)(ctx->size));
 #if VIDEO_STREAM == 1
-	vi_stream_video(jlc);
+	vi_stream_video(jl);
 #endif
 #if PHOTO_CAPTURE == 1
 	data_t* push_data = jl_cv_loop_makejf(ctx->jl_cv);
 	time_t mytime;
 
 	mytime = time(NULL);
-	jl_file_save(jlc, push_data->data,
-		jl_mem_format(jlc, "!Pic %s\b.jpeg", ctime(&mytime)),
+	jl_file_save(jl, push_data->data,
+		jl_mem_format(jl, "!Pic %s\b.jpeg", ctime(&mytime)),
 		push_data->size);
 #endif
 }
 
-static inline void vi_process(jl_t* jlc) {
-	ctx_t* ctx = jlc->prg_context;
+static inline void vi_process(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
 	m_u16_t i = 0;
 	jl_cv_rect_t blobs[30];
 
 	int maxh = 0;
 	int maxi = 0;
 
-	MEMTESTER(jlc, "loop");
+	MEMTESTER(jl, "loop");
 // Read image
 	vi_get_input(ctx);
-	MEMTESTER(jlc, "read_image");
+	MEMTESTER(jl, "read_image");
 // Filter colors
 	jl_cv_loop_filter(ctx->jl_cv, bounds);
 // Erode Blobs
@@ -148,7 +148,7 @@ static inline void vi_process(jl_t* jlc) {
 		ctx->movey = -500;
 		return;
 	}
-	MEMTESTER(jlc, "blob_detect");
+	MEMTESTER(jl, "blob_detect");
 	for(i = 0; i < ctx->item_count; i++) {
 		if(blobs[i].w > maxh) {
 			maxh = blobs[i].h;
@@ -165,77 +165,76 @@ static inline void vi_process(jl_t* jlc) {
 	ctx->movex = ctx->targetx - (ctx->imgx / 2);
 	ctx->movey = ctx->targety - (ctx->imgy / 2);
 
-	jl_print(jlc, "FPS = %f, items = %d, moxex = %d, movey = %d, h = %d", (double)(1./jlc->time.psec), ctx->item_count, ctx->movex, ctx->movey, ctx->size);
+	jl_print(jl, "FPS = %f, items = %d, moxex = %d, movey = %d, h = %d", (double)(1./jl->time.psec), ctx->item_count, ctx->movex, ctx->movey, ctx->size);
 
-	MEMTESTER(jlc, "find_blob");
+	MEMTESTER(jl, "find_blob");
 }
 
-void vi_wdns(jl_t* jlc) {
+void vi_wdns(jl_t* jl) {
 #if DO_PROCESS == 1
-	vi_process(jlc);
+	vi_process(jl);
 #else
-	vi_get_input(jlc->prg_context);
+	vi_get_input(jl->prg_context);
 #endif
-	vi_push(jlc);
-	vi_redraw(jlc);
+	vi_push(jl);
+	vi_redraw(jl);
 }
 
-static void vi_exit(jl_t* jlc) {
-	ctx_t* ctx = jlc->prg_context;
+static void vi_exit(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
 
 	jl_cv_kill(ctx->jl_cv);
-	jl_mode_exit(jlc);
 }
 
-static void vi_mdin(jl_t* jlc) {
+static void vi_mdin(jl_t* jl) {
 #if WINDOWED == 1
-	jlgr_loop_set(jlc->jlgr, vi_wdns, jl_dont, vi_wdns, jl_dont);
+	jlgr_loop_set(jl->jlgr, vi_wdns, jl_dont, vi_wdns, jl_dont);
 #endif
 }
 
 static void vi_loop(jl_t* jl) {
 #if WINDOWED == 1
-	jlgr_loop(jl->jlgr, NULL, 0);
+	jlgr_loop(jl->jlgr);
 #else
 	vi_wdns(jl);
 #endif	
 }
 
-static inline void vi_init_modes(jl_t* jlc) {
+static inline void vi_init_modes(jl_t* jl) {
 	//Set mode data
-	jl_mode_set(jlc, VI_MODE_EDIT, (jl_mode_t) { vi_mdin,vi_loop,vi_exit });
-//	jl_mode_set(jlc,VI_MODE_EDIT, JL_MODE_INIT, vi_mdin);
-//	jl_mode_set(jlc,VI_MODE_EDIT, JL_MODE_LOOP, vi_loop);
-//	jl_mode_set(jlc,VI_MODE_EDIT, JL_MODE_EXIT, vi_exit);
+	jl_mode_set(jl, VI_MODE_EDIT, (jl_mode_t) { vi_mdin,vi_loop,vi_exit });
+//	jl_mode_set(jl,VI_MODE_EDIT, JL_MODE_INIT, vi_mdin);
+//	jl_mode_set(jl,VI_MODE_EDIT, JL_MODE_LOOP, vi_loop);
+//	jl_mode_set(jl,VI_MODE_EDIT, JL_MODE_EXIT, vi_exit);
 	//Leave terminal mode
-	jl_mode_switch(jlc, VI_MODE_EDIT);
+	jl_mode_switch(jl, VI_MODE_EDIT);
 }
 
 #if WINDOWED == 1
-static inline void vi_init_tasks(jl_gr_t* jl_gr) {
-	jl_gr_addicon_slow(jl_gr);
+static inline void vi_init_tasks(jlgr_t* jlgr) {
+//	jlgr_menu_addicon_slow(jlgr);
 }
 #endif
 
-static inline void vi_init_ctx(jl_t* jlc) {
-	ctx_t* ctx = jlc->prg_context;
-	ctx->jl_cv = jl_cv_init(jlc);
-	ctx->jl_nt = jl_nt_init(jlc, HOSTNAME);
+static inline void vi_init_ctx(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
+	ctx->jl_cv = jl_cv_init(jl);
+	ctx->jl_nt = jl_nt_init(jl, HOSTNAME);
 	ctx->font = (jl_font_t) { 0, JL_IMGI_ICON, 0, color, .025f };
 
-	jl_print(jlc, "that %p", jlc->prg_context);
+	jl_print(jl, "that %p", jl->prg_context);
 }
 
-static inline void vi_init_vos(jl_t* jlc) {
+static inline void vi_init_vos(jl_t* jl) {
 #if WINDOWED == 1
-	ctx_t* ctx = jlc->prg_context;
+	ctx_t* ctx = jl->prg_context;
 
-	ctx->vos = jl_gl_vo_make(jlc->jl_gr, 2);
+	ctx->vos = jl_gl_vo_make(jl->jlgr, 2);
 #endif
 }
 
-static inline void vi_init_cv(jl_t* jlc) {
-	ctx_t* vi = jlc->prg_context;
+static inline void vi_init_cv(jl_t* jl) {
+	ctx_t* vi = jl->prg_context;
 
 #if VI_WEBCAM == 1
 	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY, 0);
@@ -249,9 +248,9 @@ static inline void vi_init_cv(jl_t* jlc) {
 
 #if WINDOWED == 1
 static void vi_init_graphics(jl_t* jl) {
-	jl_gr_t* jl_gr = jl->jl_gr;
+	jlgr_t* jlgr = jl->jlgr;
 
-	vi_init_tasks(jl_gr);
+	vi_init_tasks(jlgr);
 	vi_init_vos(jl);
 	vi_init_cv(jl);
 }
@@ -269,8 +268,8 @@ static void vi_init(jl_t* jl) {
 	jl_print_return(jl, "2846_Vision");
 }
 
-static void vi_kill(jl_t* jlc) {
-	jlgr_kill(jlc->jlgr);
+static void vi_kill(jl_t* jl) {
+	jlgr_kill(jl->jlgr);
 }
 
 int main(int argc, char* argv[]) {

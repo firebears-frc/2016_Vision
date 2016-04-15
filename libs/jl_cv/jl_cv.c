@@ -83,10 +83,9 @@ static void jl_cv_setf(jl_cv_t* jl_cv, jl_cv_flip_t f) {
 
 /* Export Functions */
 
-jl_cv_t* jl_cv_init(jl_t* jlc) {
-	jl_cv_t* jl_cv = jl_memi(jlc, sizeof(jl_cv_t));
-	jl_cv->jlc = jlc;
-	jl_cv->jl_gr = jlc->jlgr;
+jl_cv_t* jl_cv_init(jl_t* jl) {
+	jl_cv_t* jl_cv = jl_memi(jl, sizeof(jl_cv_t));
+	jl_cv->jl = jl;
 	jl_cv->image = NULL;
 	jl_cv->storage = cvCreateMemStorage(0);
 	jl_cv->element = cvCreateStructuringElementEx(3, 3, 0, 0,
@@ -116,7 +115,7 @@ void jl_cv_init_webcam(jl_cv_t* jl_cv, jl_cv_output_t output, jl_cv_flip_t f,
 
 	// If webcam can't be opened, then fail
 	if( jl_cv->camera == NULL ) {
-		jl_print(jl_cv->jlc, "Failed to open camera #%d", which);
+		jl_print(jl_cv->jl, "Failed to open camera #%d", which);
 		exit(1);
 	}
 	cvSetCaptureProperty(jl_cv->camera, CV_CAP_PROP_BRIGHTNESS, 0.);
@@ -314,14 +313,14 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 	jl_cv_getoutput(jl_cv);
 	//
 	if(jl_cv->texturesinited == 0) {
-		jl_gl_pbo_new(jl_cv->jlc->jlgr, &(jl_cv->textures[0]),
+		jl_gl_pbo_new(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
 			(void*)jl_cv->image->imageData,
 			jl_cv->image->width,
 			jl_cv->image->height, 3);
 		jl_cv->texturesinited = 1;
 	}
 	// Update the output image in a texture.
-	jl_gl_pbo_set(jl_cv->jl_gr, &(jl_cv->textures[0]),
+	jl_gl_pbo_set(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
 		(void*)jl_cv->disp_image->imageData,
 		jl_cv->disp_image->width,
 		jl_cv->disp_image->height, 3);
@@ -335,25 +334,25 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
  * @returns the data.
 **/
 data_t* jl_cv_loop_makejf(jl_cv_t* jl_cv) {
-	jl_t* jlc = jl_cv->jlc;
+	jl_t* jl = jl_cv->jl;
 	uint32_t w = jl_cv->disp_image->width;
 	uint32_t h = jl_cv->disp_image->height;
-	data_t* jpeg = jl_vi_make_jpeg(jlc, 100, 
+	data_t* jpeg = jl_vi_make_jpeg(jl, 100, 
 		(void*)jl_cv->disp_image->imageData, w, h);
 //	uint32_t l = jpeg->size;
 
-	jl_print(jlc, "w:%d...h%d", w, h);
+	jl_print(jl, "w:%d...h%d", w, h);
 	jl_cv_getoutput(jl_cv);
 	// Clear the final string.
-	jl_data_clear(jlc, jl_cv->jpeg);
+	jl_data_clear(jl, jl_cv->jpeg);
 	// Add w
-//	jl_print(jlc, "length: %d", jl_cv->jpeg->size);
-//	jl_me_strt_insert_data(jlc, jl_cv->jpeg, &(l), 4);
-//	jl_print(jlc, "length: %d", jl_cv->jpeg->size);
+//	jl_print(jl, "length: %d", jl_cv->jpeg->size);
+//	jl_me_strt_insert_data(jl, jl_cv->jpeg, &(l), 4);
+//	jl_print(jl, "length: %d", jl_cv->jpeg->size);
 	// Add h
-//	jl_me_strt_insert_data(jlc, jl_cv->jpeg, &(h), 4);
+//	jl_me_strt_insert_data(jl, jl_cv->jpeg, &(h), 4);
 	// Add data.
-	jl_data_insert_data(jlc, jl_cv->jpeg, jpeg->data, jpeg->size);
+	jl_data_insert_data(jl, jl_cv->jpeg, jpeg->data, jpeg->size);
 	// Free temporary string.
 	jl_data_free(jpeg);
 	return jl_cv->jpeg;
