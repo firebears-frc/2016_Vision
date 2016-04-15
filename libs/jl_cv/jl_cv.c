@@ -86,7 +86,7 @@ static void jl_cv_setf(jl_cv_t* jl_cv, jl_cv_flip_t f) {
 jl_cv_t* jl_cv_init(jl_t* jlc) {
 	jl_cv_t* jl_cv = jl_memi(jlc, sizeof(jl_cv_t));
 	jl_cv->jlc = jlc;
-	jl_cv->jl_gr = jlc->jl_gr;
+	jl_cv->jl_gr = jlc->jlgr;
 	jl_cv->image = NULL;
 	jl_cv->storage = cvCreateMemStorage(0);
 	jl_cv->element = cvCreateStructuringElementEx(3, 3, 0, 0,
@@ -209,8 +209,8 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 		CV_PI/25,		// Angle resolution (in radians)
 		filter_out,		// Accumulator threshold parameter
 // 2 Lines to comment out on rpi
-//		minlen,			// Minimum line length
-//		minlen*2,		// Max gap between line seg.s to join.
+		minlen,			// Minimum line length
+		minlen*2,		// Max gap between line seg.s to join.
 //
 		0, CV_PI		// Default Range in C++
 	);
@@ -314,7 +314,7 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 	jl_cv_getoutput(jl_cv);
 	//
 	if(jl_cv->texturesinited == 0) {
-		jl_gl_pbo_new(jl_cv->jlc->jl_gr, &(jl_cv->textures[0]),
+		jl_gl_pbo_new(jl_cv->jlc->jlgr, &(jl_cv->textures[0]),
 			(void*)jl_cv->image->imageData,
 			jl_cv->image->width,
 			jl_cv->image->height, 3);

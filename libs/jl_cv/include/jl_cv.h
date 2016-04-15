@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct{
 	jl_t* jlc;
-	jl_gr_t* jl_gr;
+	jlgr_t* jl_gr;
 	CvCapture* camera;
 	IplImage* image;
 	IplImage* image_hsv;
