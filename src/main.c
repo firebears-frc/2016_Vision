@@ -46,12 +46,18 @@ m_u8_t color[] = { 127, 255, 127, 255 };
 //	uint8_t bounds[] = { 0, 0, 150, 255, 230, 255 };
 //	uint8_t bounds[] = { 30, 0, 220, 85, 15, 255 };
 uint8_t bounds[6];
+uint8_t haveSliders = 0;
 
 #define MEMTESTER(a, b) //memtester(a, b  )
 void memtester(jl_t* jl, str_t name) {
 	int diff = jl_mem_tbiu() - oldtbiu;
 	printf("%s %d\n", name, diff);
 	oldtbiu = jl_mem_tbiu();
+}
+
+static void vi_print_bounds(void) {
+	printf("%d, %d, %d, %d, %d, %d\n", bounds[0], bounds[1],
+		bounds[2], bounds[3], bounds[4], bounds[5]);
 }
 
 static inline void vi_redraw(jl_t* jl) {
@@ -82,6 +88,9 @@ static inline void vi_redraw(jl_t* jl) {
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
 	jl_print(jl, "Drew screen");
 #endif
+	int i;
+	for(i = 0; i < 3; i++)
+		jlgr_sprite_draw(jl->jlgr, ctx->slider[i]);
 }
 
 void vi_get_input(ctx_t* ctx) {
@@ -171,6 +180,16 @@ static inline void vi_process(jl_t* jl) {
 }
 
 void vi_wdns(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
+	if(haveSliders) {
+		bounds[0] = (uint8_t)(ctx->hsv_lo[0] * 255.);
+		bounds[1] = (uint8_t)(ctx->hsv_lo[1] * 255.);
+		bounds[2] = (uint8_t)(ctx->hsv_lo[2] * 255.);
+		bounds[3] = (uint8_t)(ctx->hsv_hi[0] * 255.);
+		bounds[4] = (uint8_t)(ctx->hsv_hi[1] * 255.);
+		bounds[5] = (uint8_t)(ctx->hsv_hi[2] * 255.);
+		vi_print_bounds();
+	}
 #if DO_PROCESS == 1
 	vi_process(jl);
 #else
@@ -181,20 +200,37 @@ void vi_wdns(jl_t* jl) {
 }
 
 static void vi_exit(jl_t* jl) {
-	ctx_t* ctx = jl->prg_context;
+//	ctx_t* ctx = jl->prg_context;
 
-	jl_cv_kill(ctx->jl_cv);
+//	jl_cv_kill(ctx->jl_cv);
+}
+
+static void vi_resz(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
+	float ar = jl_gl_ar(jl->jlgr);
+	jl_rect_t rect[] = {
+		{ 0., ar - .05, 1./3., .05 },
+		{ 1./3., ar - .05, 1./3., .05 },
+		{ 2./3., ar - .05, 1./3., .05 }};
+	int i;
+	for(i = 0; i < 3; i++)
+		jlgr_sprite_resize(jl->jlgr, ctx->slider[i], &rect[i]);
 }
 
 static void vi_mdin(jl_t* jl) {
 #if WINDOWED == 1
-	jlgr_loop_set(jl->jlgr, vi_wdns, jl_dont, vi_wdns, jl_dont);
+	jlgr_loop_set(jl->jlgr, vi_wdns, jl_dont, vi_wdns, vi_resz);
 #endif
 }
 
 static void vi_loop(jl_t* jl) {
 #if WINDOWED == 1
+	int i;
+	ctx_t* ctx = jl_get_context(jl);
+
 	jlgr_loop(jl->jlgr);
+	for(i = 0; i < 3; i++)
+		jlgr_sprite_loop(jl->jlgr, ctx->slider[i]);
 #else
 	vi_wdns(jl);
 #endif	
@@ -237,13 +273,26 @@ static inline void vi_init_cv(jl_t* jl) {
 	ctx_t* vi = jl->prg_context;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(vi->jl_cv, JL_CV_ORIG, JL_CV_FLIPY, 0);
+	jl_cv_init_webcam(vi->jl_cv, JL_CV_CHNG, JL_CV_FLIPY, 0);
 #else
 	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, FILENAME, JL_CV_FLIPN);
 #endif
 	jl_cv_get_img(vi->jl_cv, &vi->imgx, &vi->imgy, NULL);
 	jl_nt_push_num(vi->jl_nt, "video_stream/resw", vi->imgx);
 	jl_nt_push_num(vi->jl_nt, "video_stream/resh", vi->imgy);
+}
+
+static inline void vi_init_sliders(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
+	float ar = jl_gl_ar(jl->jlgr);
+	int i;
+	jl_rect_t rect[] = {
+		{ 0., ar - .05, 1./3., .05 },
+		{ 1./3., ar - .05, 1./3., .05 },
+		{ 2./3., ar - .05, 1./3., .05 }};
+	for(i = 0; i < 3; i++)
+		ctx->slider[i] = jlgr_gui_slider(jl->jlgr, rect[i], 2,
+			&ctx->hsv_lo[i], &ctx->hsv_hi[i]);
 }
 
 #if WINDOWED == 1
@@ -253,6 +302,7 @@ static void vi_init_graphics(jl_t* jl) {
 	vi_init_tasks(jlgr);
 	vi_init_vos(jl);
 	vi_init_cv(jl);
+	if(haveSliders) vi_init_sliders(jl);
 }
 #endif
 
@@ -274,16 +324,17 @@ static void vi_kill(jl_t* jl) {
 
 int main(int argc, char* argv[]) {
 	if(argc != 7) {
-		printf("need more parameters\n");
-		exit(-1);
+		haveSliders = 1;
+//		printf("need more parameters\n");
+//		exit(-1);
+	}else{
+		int i;
+		for(i = 0; i < 6; i++) {
+			int x;
+			sscanf(argv[i + 1], "%d", &x);
+			bounds[i] = x;
+		}
+		vi_print_bounds();
 	}
-	int i;
-	for(i = 0; i < 6; i++) {
-		int x;
-		sscanf(argv[i + 1], "%d", &x);
-		bounds[i] = x;
-	}
-	printf("%d, %d, %d, %d, %d, %d\n", bounds[0], bounds[1], bounds[2],
-		bounds[3], bounds[4], bounds[5]);
 	return jl_start(vi_init, vi_kill, sizeof(ctx_t));
 }

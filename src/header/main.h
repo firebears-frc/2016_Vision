@@ -22,4 +22,8 @@ typedef struct{
 	m_u16_t imgx, imgy;
 	m_u16_t size;
 	jl_font_t font;
+	// Calibration
+	jl_sprite_t* slider[3];
+	float hsv_hi[3];
+	float hsv_lo[3];
 }ctx_t;
