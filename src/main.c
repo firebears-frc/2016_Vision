@@ -46,7 +46,7 @@ m_u8_t color[] = { 127, 255, 127, 255 };
 //	uint8_t bounds[] = { 0, 0, 150, 255, 230, 255 };
 //	uint8_t bounds[] = { 30, 0, 220, 85, 15, 255 };
 uint8_t bounds[6];
-uint8_t haveSliders = 0;
+uint8_t haveParameters = 1;
 
 #define MEMTESTER(a, b) //memtester(a, b  )
 void memtester(jl_t* jl, str_t name) {
@@ -88,9 +88,11 @@ static inline void vi_redraw(jl_t* jl) {
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
 	jl_print(jl, "Drew screen");
 #endif
-	int i;
-	for(i = 0; i < 3; i++)
-		jlgr_sprite_draw(jl->jlgr, ctx->slider[i]);
+	if(haveParameters == 0) {
+		int i;
+		for(i = 0; i < 3; i++)
+			jlgr_sprite_draw(jl->jlgr, ctx->slider[i]);
+	}
 }
 
 void vi_get_input(ctx_t* ctx) {
@@ -181,7 +183,7 @@ static inline void vi_process(jl_t* jl) {
 
 void vi_wdns(jl_t* jl) {
 	ctx_t* ctx = jl->prg_context;
-	if(haveSliders) {
+	if(haveParameters == 0) {
 		bounds[0] = (uint8_t)(ctx->hsv_lo[0] * 255.);
 		bounds[1] = (uint8_t)(ctx->hsv_lo[1] * 255.);
 		bounds[2] = (uint8_t)(ctx->hsv_lo[2] * 255.);
@@ -213,8 +215,10 @@ static void vi_resz(jl_t* jl) {
 		{ 1./3., ar - .05, 1./3., .05 },
 		{ 2./3., ar - .05, 1./3., .05 }};
 	int i;
-	for(i = 0; i < 3; i++)
-		jlgr_sprite_resize(jl->jlgr, ctx->slider[i], &rect[i]);
+	if(haveParameters == 0) {
+		for(i = 0; i < 3; i++)
+			jlgr_sprite_resize(jl->jlgr, ctx->slider[i], &rect[i]);
+	}
 }
 
 static void vi_mdin(jl_t* jl) {
@@ -229,8 +233,10 @@ static void vi_loop(jl_t* jl) {
 	ctx_t* ctx = jl_get_context(jl);
 
 	jlgr_loop(jl->jlgr);
-	for(i = 0; i < 3; i++)
-		jlgr_sprite_loop(jl->jlgr, ctx->slider[i]);
+	if(haveParameters == 0) {
+		for(i = 0; i < 3; i++)
+			jlgr_sprite_loop(jl->jlgr, ctx->slider[i]);
+	}
 #else
 	vi_wdns(jl);
 #endif	
@@ -302,7 +308,7 @@ static void vi_init_graphics(jl_t* jl) {
 	vi_init_tasks(jlgr);
 	vi_init_vos(jl);
 	vi_init_cv(jl);
-	if(haveSliders) vi_init_sliders(jl);
+	if(haveParameters == 0) vi_init_sliders(jl);
 }
 #endif
 
@@ -324,7 +330,7 @@ static void vi_kill(jl_t* jl) {
 
 int main(int argc, char* argv[]) {
 	if(argc != 7) {
-		haveSliders = 1;
+		haveParameters = 0;
 //		printf("need more parameters\n");
 //		exit(-1);
 	}else{
