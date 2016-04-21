@@ -5,21 +5,10 @@
 #define FILENAME "Super.jpeg"
 #define VI_WEBCAM 1
 #define WINDOWED 1
-#define PHOTO_CAPTURE 0
 #define DRAW_TARGET 0
 #define DO_PROCESS 1
 #define VIDEO_STREAM 1
-
-// Don't save JPEGS if not capturing images from a camera.
-#if VI_WEBCAM == 0
-	#undef PHOTO_CAPTURE
-	#define PHOTO_CAPTURE 0
-#endif
-// If saving to files, turn of target drawing.
-#if PHOTO_CAPTURE == 1
-	#undef DRAW_TARGET
-	#define DRAW_TARGET 0
-#endif
+#define VI_DISPLAY JL_CV_CHNG
 
 int oldtbiu = 0;
 int shape[] = {
@@ -64,6 +53,7 @@ static inline void vi_redraw(jl_t* jl) {
 #if WINDOWED == 1
 	ctx_t* ctx = jl->prg_context;
 	double ar;
+	double height = jl_gl_ar(jl->jlgr) - .05;
 
 #if DRAW_TARGET == 1
 	// Draw target
@@ -80,13 +70,12 @@ static inline void vi_redraw(jl_t* jl) {
 	// Change to image
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
 	jlgr_vos_texture(jl->jlgr, &(ctx->vos[0]),
-		(jl_rect_t) { 0.f, 0.f, ar, jl_gl_ar(jl->jlgr) },
+		(jl_rect_t) { 0.f, 0.f, height / ar, height },
 		&(ctx->jl_cv->textures[0]), 0, 255);
 	jlgr_draw_vo(jl->jlgr, &(ctx->vos[0]), NULL);
 	jlgr_draw_text(jl->jlgr, jl_mem_format(jl, "movex:%d, movey:%d",
 			ctx->movex, ctx->movey),
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
-	jl_print(jl, "Drew screen");
 #endif
 	if(haveParameters == 0) {
 		int i;
@@ -113,6 +102,17 @@ static inline void vi_stream_video(jl_t* jl) {
 	jl_nt_push_data(ctx->jl_nt, NT_PIXELS, pixels, w * h * 3);
 }
 
+void vi_take_picture(jl_t* jl) {
+	ctx_t* ctx = jl->prg_context;
+	data_t* push_data = jl_cv_loop_makejf(ctx->jl_cv);
+	time_t mytime;
+
+	mytime = time(NULL);
+	jl_file_save(jl, push_data->data,
+		jl_mem_format(jl, "!Pic %s\b.jpeg", ctime(&mytime)),
+		push_data->size);
+}
+
 static inline void vi_push(jl_t* jl) {
 	ctx_t* ctx = jl->prg_context;
 
@@ -123,15 +123,6 @@ static inline void vi_push(jl_t* jl) {
 	jl_nt_push_num(ctx->jl_nt, NT_SIZE, (double)(ctx->size));
 #if VIDEO_STREAM == 1
 	vi_stream_video(jl);
-#endif
-#if PHOTO_CAPTURE == 1
-	data_t* push_data = jl_cv_loop_makejf(ctx->jl_cv);
-	time_t mytime;
-
-	mytime = time(NULL);
-	jl_file_save(jl, push_data->data,
-		jl_mem_format(jl, "!Pic %s\b.jpeg", ctime(&mytime)),
-		push_data->size);
 #endif
 }
 
@@ -190,7 +181,6 @@ void vi_wdns(jl_t* jl) {
 		bounds[3] = (uint8_t)(ctx->hsv_hi[0] * 255.);
 		bounds[4] = (uint8_t)(ctx->hsv_hi[1] * 255.);
 		bounds[5] = (uint8_t)(ctx->hsv_hi[2] * 255.);
-		vi_print_bounds();
 	}
 #if DO_PROCESS == 1
 	vi_process(jl);
@@ -245,9 +235,6 @@ static void vi_loop(jl_t* jl) {
 static inline void vi_init_modes(jl_t* jl) {
 	//Set mode data
 	jl_mode_set(jl, VI_MODE_EDIT, (jl_mode_t) { vi_mdin,vi_loop,vi_exit });
-//	jl_mode_set(jl,VI_MODE_EDIT, JL_MODE_INIT, vi_mdin);
-//	jl_mode_set(jl,VI_MODE_EDIT, JL_MODE_LOOP, vi_loop);
-//	jl_mode_set(jl,VI_MODE_EDIT, JL_MODE_EXIT, vi_exit);
 	//Leave terminal mode
 	jl_mode_switch(jl, VI_MODE_EDIT);
 }
@@ -279,9 +266,9 @@ static inline void vi_init_cv(jl_t* jl) {
 	ctx_t* vi = jl->prg_context;
 
 #if VI_WEBCAM == 1
-	jl_cv_init_webcam(vi->jl_cv, JL_CV_CHNG, JL_CV_FLIPY, 0);
+	jl_cv_init_webcam(vi->jl_cv, VI_DISPLAY, JL_CV_FLIPY, 0);
 #else
-	jl_cv_init_image(vi->jl_cv, JL_CV_CHNG, FILENAME, JL_CV_FLIPN);
+	jl_cv_init_image(vi->jl_cv, VI_DISPLAY, FILENAME, JL_CV_FLIPN);
 #endif
 	jl_cv_get_img(vi->jl_cv, &vi->imgx, &vi->imgy, NULL);
 	jl_nt_push_num(vi->jl_nt, "video_stream/resw", vi->imgx);

@@ -2,19 +2,12 @@
 
 /* Static Functions */
 
-static void jl_cv_img_crop(jl_cv_t* jl_cv, IplImage* image_to_disp, int cvt) {
-	cvSetImageROI(image_to_disp, cvRect(0, 0, image_to_disp->width,
-		image_to_disp->width));
-	if(cvt) cvCvtColor(image_to_disp, jl_cv->disp_image, cvt);
-	else cvCopy(image_to_disp, jl_cv->disp_image, NULL);
-	cvResetImageROI(image_to_disp);
-}
-
-static void jl_cv_conv__(jl_cv_t* jl_cv, int hsv, int gray) {
-	if(jl_cv->flip!=-2) cvFlip(jl_cv->image, NULL, jl_cv->flip);
-	cvCvtColor(jl_cv->image, jl_cv->image_hsv, hsv);
-	cvCvtColor(jl_cv->image, jl_cv->gray_image, gray);
+static void jl_cv_rgb_to_hsvandgrey__(jl_cv_t* jl_cv) {
+	if(jl_cv->flip!=-2) cvFlip(jl_cv->image_rgb, NULL, jl_cv->flip);
+	cvCvtColor(jl_cv->image_rgb, jl_cv->image_hsv, CV_RGB2HSV);
+	cvCvtColor(jl_cv->image_rgb, jl_cv->gray_image, CV_RGB2GRAY);
 	cvSmooth(jl_cv->gray_image, jl_cv->gray_blur, CV_GAUSSIAN, 15,15,0,0);
+	jl_cv->convertdone = false;
 }
 
 void jl_cv_disp_gray_(jl_cv_t* jl_cv) {
@@ -23,32 +16,32 @@ void jl_cv_disp_gray_(jl_cv_t* jl_cv) {
 }
 
 static void jl_cv_webcam_get__(jl_cv_t* jl_cv) {
-	jl_cv->image = cvQueryFrame(jl_cv->camera);
-	if( jl_cv->image == NULL ) {
+	jl_cv->image_rgb = cvQueryFrame(jl_cv->camera);
+	if( jl_cv->image_rgb == NULL ) {
 		fprintf(stderr, "couldn't retrieve frame\n" );
 		exit(1);
 	}
-	cvResize(jl_cv->image, jl_cv->image, CV_INTER_LINEAR);
+	cvCvtColor(jl_cv->image_rgb, jl_cv->image_rgb, CV_RGBA2RGB );
+	cvResize(jl_cv->image_rgb, jl_cv->image_rgb, CV_INTER_LINEAR);
 }
 
 static void jl_cv_image_get__(jl_cv_t* jl_cv, str_t fname) {
-	if(jl_cv->image) cvReleaseImage( &(jl_cv->image) );
-	jl_cv->image = cvLoadImage(fname, 1);
-	if( jl_cv->image == NULL ) {
+	if(jl_cv->image_rgb) cvReleaseImage( &(jl_cv->image_rgb) );
+	jl_cv->image_rgb = cvLoadImage(fname, 1);
+	if( jl_cv->image_rgb == NULL ) {
 		fprintf(stderr, "Could not load image file: %s\n", fname );
 		exit(1);
 	}
-	cvResize(jl_cv->image, jl_cv->image, CV_INTER_LINEAR);
+	cvResize(jl_cv->image_rgb, jl_cv->image_rgb, CV_INTER_LINEAR);
 }
 
 static void jl_cv_hsv_init__(jl_cv_t* jl_cv) {
-	jl_cv->image_hsv = cvCreateImage(cvGetSize(jl_cv->image),8,3);
-	jl_cv->gray_image = cvCreateImage(cvGetSize(jl_cv->image),8,1);
-	jl_cv->gray_blur = cvCreateImage(cvGetSize(jl_cv->image),8,1);
-	jl_cv->disp_image = cvCreateImage(cvGetSize(jl_cv->image),8,3);
-	jl_cv->temp_image = cvCreateImage(cvGetSize(jl_cv->image),8,1);
-	jl_cv->skel_image = cvCreateImage(cvGetSize(jl_cv->image),8,0);
-	jl_cv->erod_image = cvCreateImage(cvGetSize(jl_cv->image),8,0);
+	jl_cv->image_hsv = cvCreateImage(cvGetSize(jl_cv->image_rgb),8,3);
+	jl_cv->gray_image = cvCreateImage(cvGetSize(jl_cv->image_rgb),8,1);
+	jl_cv->gray_blur = cvCreateImage(cvGetSize(jl_cv->image_rgb),8,1);
+	jl_cv->temp_image = cvCreateImage(cvGetSize(jl_cv->image_rgb),8,1);
+	jl_cv->skel_image = cvCreateImage(cvGetSize(jl_cv->image_rgb),8,0);
+	jl_cv->erod_image = cvCreateImage(cvGetSize(jl_cv->image_rgb),8,0);
 }
 
 static void jl_cv_hsv_filter__(jl_cv_t* jl_cv, u8_t* hsv) {
@@ -60,11 +53,13 @@ static void jl_cv_hsv_filter__(jl_cv_t* jl_cv, u8_t* hsv) {
 void jl_cv_getoutput(jl_cv_t* jl_cv) {
 	if(!jl_cv->convertdone) {
 		if(jl_cv->output == JL_CV_ORIG) {
-			jl_cv_img_crop(jl_cv, jl_cv->image, 0);
+//			jl_cv_img_crop(jl_cv, jl_cv->image_rgb, 0);
 		}else if(jl_cv->output == JL_CV_CHNG) {
-			jl_cv_img_crop(jl_cv, jl_cv->image_hsv, CV_HSV2RGB);
+			cvCvtColor(jl_cv->image_hsv, jl_cv->image_rgb, CV_HSV2RGB);
+//			jl_cv_img_crop(jl_cv, jl_cv->image_hsv, CV_HSV2RGB);
 		}else if(jl_cv->output == JL_CV_GRAY) {
-			jl_cv_img_crop(jl_cv, jl_cv->gray_image, CV_GRAY2RGB);
+			cvCvtColor(jl_cv->gray_image, jl_cv->image_rgb, CV_GRAY2RGB);
+//			jl_cv_img_crop(jl_cv, jl_cv->gray_image, CV_GRAY2RGB);
 		}
 		jl_cv->convertdone = true;
 	}
@@ -86,7 +81,7 @@ static void jl_cv_setf(jl_cv_t* jl_cv, jl_cv_flip_t f) {
 jl_cv_t* jl_cv_init(jl_t* jl) {
 	jl_cv_t* jl_cv = jl_memi(jl, sizeof(jl_cv_t));
 	jl_cv->jl = jl;
-	jl_cv->image = NULL;
+	jl_cv->image_rgb = NULL;
 	jl_cv->storage = cvCreateMemStorage(0);
 	jl_cv->element = cvCreateStructuringElementEx(3, 3, 0, 0,
 		CV_SHAPE_CROSS, NULL);
@@ -139,15 +134,13 @@ void jl_cv_init_image(jl_cv_t* jl_cv, jl_cv_output_t output, str_t fname,
 void jl_cv_loop_webcam(jl_cv_t* jl_cv) {
 	// Retrieve the image from camera ID:0 then store in image
 	jl_cv_webcam_get__(jl_cv);
-	jl_cv_conv__(jl_cv, CV_RGBA2RGB, CV_RGBA2GRAY);
-	jl_cv->convertdone = false;
+	jl_cv_rgb_to_hsvandgrey__(jl_cv);
 }
 
 void jl_cv_loop_image(jl_cv_t* jl_cv, str_t fname) {
 	// Load the image from a file, then store in image
 	jl_cv_image_get__(jl_cv, fname);
-	jl_cv_conv__(jl_cv, CV_RGB2HSV, CV_RGB2GRAY);
-	jl_cv->convertdone = false;
+	jl_cv_rgb_to_hsvandgrey__(jl_cv);
 }
 
 void jl_cv_loop_filter(jl_cv_t* jl_cv, u8_t* hsv) {
@@ -296,11 +289,11 @@ void jl_cv_struct_erode(jl_cv_t* jl_cv, int w, int h, int* values) {
  * Get width, height and pixels of an image.
 **/
 void jl_cv_get_img(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h, m_u8_t** pixels) {
-	if(w) *w = jl_cv->disp_image->width;
-	if(h) *h = jl_cv->disp_image->height;
+	if(w) *w = jl_cv->image_rgb->width;
+	if(h) *h = jl_cv->image_rgb->height;
 	if(pixels) {
 		jl_cv_getoutput(jl_cv);
-		*pixels = (void*)jl_cv->disp_image->imageData;
+		*pixels = (void*)jl_cv->image_rgb->imageData;
 	}
 }
 
@@ -314,43 +307,35 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 	//
 	if(jl_cv->texturesinited == 0) {
 		jl_gl_pbo_new(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
-			(void*)jl_cv->image->imageData,
-			jl_cv->image->width,
-			jl_cv->image->height, 3);
+			(void*)jl_cv->image_rgb->imageData,
+			jl_cv->image_rgb->width,
+			jl_cv->image_rgb->height, 3);
 		jl_cv->texturesinited = 1;
 	}
 	// Update the output image in a texture.
 	jl_gl_pbo_set(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
-		(void*)jl_cv->disp_image->imageData,
-		jl_cv->disp_image->width,
-		jl_cv->disp_image->height, 3);
-	return ((double)jl_cv->disp_image->height) /
-		((double)jl_cv->disp_image->width);
+		(void*)jl_cv->image_rgb->imageData,
+		jl_cv->image_rgb->width,
+		jl_cv->image_rgb->height, 3);
+	return ((double)jl_cv->image_rgb->height) /
+		((double)jl_cv->image_rgb->width);
 }
 
 /**
- * Make a frame from the image in the opencv buffer
+ * Get JPEG file data from the current image.  The returned variable should not
+ *	be freed.
  * @param jl_cv: JL_CV context.
  * @returns the data.
 **/
 data_t* jl_cv_loop_makejf(jl_cv_t* jl_cv) {
 	jl_t* jl = jl_cv->jl;
-	uint32_t w = jl_cv->disp_image->width;
-	uint32_t h = jl_cv->disp_image->height;
 	data_t* jpeg = jl_vi_make_jpeg(jl, 100, 
-		(void*)jl_cv->disp_image->imageData, w, h);
-//	uint32_t l = jpeg->size;
+		(void*)jl_cv->image_rgb->imageData, jl_cv->image_rgb->width,
+		jl_cv->image_rgb->height);
 
-	jl_print(jl, "w:%d...h%d", w, h);
 	jl_cv_getoutput(jl_cv);
 	// Clear the final string.
 	jl_data_clear(jl, jl_cv->jpeg);
-	// Add w
-//	jl_print(jl, "length: %d", jl_cv->jpeg->size);
-//	jl_me_strt_insert_data(jl, jl_cv->jpeg, &(l), 4);
-//	jl_print(jl, "length: %d", jl_cv->jpeg->size);
-	// Add h
-//	jl_me_strt_insert_data(jl, jl_cv->jpeg, &(h), 4);
 	// Add data.
 	jl_data_insert_data(jl, jl_cv->jpeg, jpeg->data, jpeg->size);
 	// Free temporary string.

@@ -27,11 +27,10 @@ typedef struct {
 typedef struct{
 	jl_t* jl;
 	CvCapture* camera;
-	IplImage* image;
+	IplImage* image_rgb;
 	IplImage* image_hsv;
 	IplImage* gray_image;
 	IplImage* gray_blur;
-	IplImage* disp_image; // The image that will be displayed on screen.
 	IplImage* temp_image;
 	IplImage* skel_image;
 	IplImage* erod_image;
