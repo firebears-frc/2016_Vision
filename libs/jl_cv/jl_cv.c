@@ -201,8 +201,8 @@ u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 		CV_PI/25,		// Angle resolution (in radians)
 		filter_out,		// Accumulator threshold parameter
 // 2 Lines to comment out on rpi
-		minlen,			// Minimum line length
-		minlen*2,		// Max gap between line seg.s to join.
+//		minlen,			// Minimum line length
+//		minlen*2,		// Max gap between line seg.s to join.
 //
 		0, CV_PI		// Default Range in C++
 	);
@@ -303,8 +303,10 @@ void jl_cv_get_img(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h, m_u8_t** pixels) {
  * @returns: The y aspect ratio of the image ( y / x).
 **/
 double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
+	printf("asdfadsfa\n");
 	jl_cv_getoutput(jl_cv);
 	//
+	printf("asdf 2\n");
 	if(jl_cv->texturesinited == 0) {
 		jl_gl_pbo_new(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
 			(void*)jl_cv->image_rgb->imageData,
@@ -312,11 +314,13 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 			jl_cv->image_rgb->height, 3);
 		jl_cv->texturesinited = 1;
 	}
+	printf("asdf 3\n");
 	// Update the output image in a texture.
 	jl_gl_pbo_set(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
 		(void*)jl_cv->image_rgb->imageData,
 		jl_cv->image_rgb->width,
 		jl_cv->image_rgb->height, 3);
+	printf("asdf 4\n");
 	return ((double)jl_cv->image_rgb->height) /
 		((double)jl_cv->image_rgb->width);
 }

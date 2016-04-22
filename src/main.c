@@ -3,12 +3,12 @@
 // settings
 #define HOSTNAME "roborio-2846-frc.local" /*"10.30.21.108"*/
 #define FILENAME "Super.jpeg"
-#define VI_WEBCAM 1
+#define VI_WEBCAM 0
 #define WINDOWED 1
 #define DRAW_TARGET 0
-#define DO_PROCESS 1
-#define VIDEO_STREAM 1
-#define VI_DISPLAY JL_CV_CHNG
+#define DO_PROCESS 0
+#define VIDEO_STREAM 0
+#define VI_DISPLAY JL_CV_ORIG
 
 int oldtbiu = 0;
 int shape[] = {
@@ -37,7 +37,7 @@ m_u8_t color[] = { 127, 255, 127, 255 };
 uint8_t bounds[6];
 uint8_t haveParameters = 1;
 
-#define MEMTESTER(a, b) //memtester(a, b  )
+#define MEMTESTER(a, b) jl_print(a, b) //memtester(a, b  )
 void memtester(jl_t* jl, str_t name) {
 	int diff = jl_mem_tbiu() - oldtbiu;
 	printf("%s %d\n", name, diff);
@@ -57,6 +57,7 @@ static inline void vi_redraw(jl_t* jl) {
 
 #if DRAW_TARGET == 1
 	// Draw target
+	MEMTESTER(jl, "Draw target");
 	u32_t drawsize = ctx->target.h / 2;
 	jl_cv_draw_circle(ctx->jl_cv, (jl_rect_t) {
 		ctx->targetx,ctx->targety,drawsize/2,0});
@@ -67,21 +68,26 @@ static inline void vi_redraw(jl_t* jl) {
 		cvPoint(ctx->targetx,ctx->targety-drawsize),
 		cvPoint(ctx->targetx,ctx->targety+drawsize)});
 #endif
+	MEMTESTER(jl, "Target drawn");
 	// Change to image
 	ar = jl_cv_loop_maketx(ctx->jl_cv);
+	MEMTESTER(jl, "vosing");
 	jlgr_vos_texture(jl->jlgr, &(ctx->vos[0]),
 		(jl_rect_t) { 0.f, 0.f, height / ar, height },
 		&(ctx->jl_cv->textures[0]), 0, 255);
+	MEMTESTER(jl, "Drawing vo");
 	jlgr_draw_vo(jl->jlgr, &(ctx->vos[0]), NULL);
+	MEMTESTER(jl, "Text draw");
 	jlgr_draw_text(jl->jlgr, jl_mem_format(jl, "movex:%d, movey:%d",
 			ctx->movex, ctx->movey),
 		(jl_vec3_t) { 0., .025, 0. }, ctx->font);
-#endif
+	MEMTESTER(jl, "slider draw");
 	if(haveParameters == 0) {
 		int i;
 		for(i = 0; i < 3; i++)
 			jlgr_sprite_draw(jl->jlgr, ctx->slider[i]);
 	}
+#endif
 }
 
 void vi_get_input(ctx_t* ctx) {
@@ -121,15 +127,19 @@ static inline void vi_push(jl_t* jl) {
 	jl_nt_push_num(ctx->jl_nt, NT_ANGLE, (double)(ctx->movex));
 	jl_nt_push_num(ctx->jl_nt, NT_FPS, (double)(1./jl->time.psec));
 	jl_nt_push_num(ctx->jl_nt, NT_SIZE, (double)(ctx->size));
+	MEMTESTER(jl, "nt end");
 #if VIDEO_STREAM == 1
+	MEMTESTER(jl, "video stream begin");
 	vi_stream_video(jl);
+//	jl_cv_get_img(ctx->jl_cv, NULL, NULL, NULL);
+	MEMTESTER(jl, "video stream end");
 #endif
 }
 
 static inline void vi_process(jl_t* jl) {
 	ctx_t* ctx = jl->prg_context;
 	m_u16_t i = 0;
-	jl_cv_rect_t blobs[30];
+	jl_cv_rect_t blobs[15];
 
 	int maxh = 0;
 	int maxi = 0;
@@ -143,11 +153,12 @@ static inline void vi_process(jl_t* jl) {
 // Erode Blobs
 	jl_cv_struct_erode(ctx->jl_cv, 5, 5, shape);
 // Blob Detect
-	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 30, blobs);
+	ctx->item_count = jl_cv_loop_objectrects(ctx->jl_cv, 15, blobs);
 
 // Find the Best Blob
 	if(ctx->item_count == 0) {
 		ctx->movey = -500;
+		jl_print(jl, "FPS = %f, no recognized items.", (double)(1./jl->time.psec)); 
 		return;
 	}
 	MEMTESTER(jl, "blob_detect");
@@ -192,11 +203,13 @@ void vi_wdns(jl_t* jl) {
 }
 
 static void vi_exit(jl_t* jl) {
+	exit(0);
 //	ctx_t* ctx = jl->prg_context;
 
 //	jl_cv_kill(ctx->jl_cv);
 }
 
+#if WINDOWED == 1
 static void vi_resz(jl_t* jl) {
 	ctx_t* ctx = jl->prg_context;
 	float ar = jl_gl_ar(jl->jlgr);
@@ -210,6 +223,7 @@ static void vi_resz(jl_t* jl) {
 			jlgr_sprite_resize(jl->jlgr, ctx->slider[i], &rect[i]);
 	}
 }
+#endif
 
 static void vi_mdin(jl_t* jl) {
 #if WINDOWED == 1
