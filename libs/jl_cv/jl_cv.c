@@ -21,7 +21,7 @@ static void jl_cv_webcam_get__(jl_cv_t* jl_cv) {
 		fprintf(stderr, "couldn't retrieve frame\n" );
 		exit(1);
 	}
-	cvCvtColor(jl_cv->image_rgb, jl_cv->image_rgb, CV_RGBA2RGB );
+	cvCvtColor(jl_cv->image_rgb, jl_cv->image_rgb, CV_BGRA2RGB);
 	cvResize(jl_cv->image_rgb, jl_cv->image_rgb, CV_INTER_LINEAR);
 }
 
@@ -229,18 +229,48 @@ u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_cv_rect_t* rtn_rect
 		jl_cv->storage,		// Output of found contours
 		&contours,		// ptr to 1st contour
 		sizeof(CvContour),
-		CV_RETR_LIST,
+		CV_RETR_EXTERNAL,
 		CV_CHAIN_APPROX_SIMPLE,
 		cvPoint(0,0)
 	);
 	count = total >= max_rtn ? max_rtn : total;
 	for(i = 0; i < count; i++) {
-		rect = cvBoundingRect(contours, 0);
+		rect = cvBoundingRect(contours, 1);
 		rtn_rects[i] = (jl_cv_rect_t) {
 			rect.x, rect.y, rect.width, rect.height };
 		contours = (CvSeq *)(contours->h_next);
 	}
 	return total;
+}
+
+/**
+ * Find the location and size of the biggest detected object.
+**/
+void jl_cv_loop_bigobject(jl_cv_t* jl_cv, jl_cv_rect_t* rtn_rect) {
+	int i, count;
+	int maxarea = 0;
+	CvSeq *contours = NULL;
+	CvRect rect;
+
+	jl_cv_disp_gray_(jl_cv);
+	count = cvFindContours(
+		jl_cv->gray_image,	// The image
+		jl_cv->storage,		// Output of found contours
+		&contours,		// ptr to 1st contour
+		sizeof(CvContour),
+		CV_RETR_EXTERNAL,
+		CV_CHAIN_APPROX_SIMPLE,
+		cvPoint(0,0)
+	);
+	for(i = 0; i < count; i++) {
+		rect = cvBoundingRect(contours, 1);
+		if(rect.width * rect.height > maxarea) {
+			maxarea = rect.width * rect.height;
+			*rtn_rect = (jl_cv_rect_t) {
+				rect.x, rect.y, rect.width, rect.height };
+		}
+		contours = (CvSeq *)(contours->h_next);
+	}
 }
 
 void jl_cv_erode(jl_cv_t* jl_cv) {
@@ -303,8 +333,10 @@ void jl_cv_get_img(jl_cv_t* jl_cv, m_u16_t* w, m_u16_t* h, m_u8_t** pixels) {
  * @returns: The y aspect ratio of the image ( y / x).
 **/
 double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
+	printf("asdfadsfa\n");
 	jl_cv_getoutput(jl_cv);
 	//
+	printf("asdf 2\n");
 	if(jl_cv->texturesinited == 0) {
 		jl_gl_pbo_new(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
 			(void*)jl_cv->image_rgb->imageData,
@@ -312,11 +344,13 @@ double jl_cv_loop_maketx(jl_cv_t* jl_cv) {
 			jl_cv->image_rgb->height, 3);
 		jl_cv->texturesinited = 1;
 	}
+	printf("asdf 3\n");
 	// Update the output image in a texture.
 	jl_gl_pbo_set(jl_cv->jl->jlgr, &(jl_cv->textures[0]),
 		(void*)jl_cv->image_rgb->imageData,
 		jl_cv->image_rgb->width,
 		jl_cv->image_rgb->height, 3);
+	printf("asdf 4\n");
 	return ((double)jl_cv->image_rgb->height) /
 		((double)jl_cv->image_rgb->width);
 }

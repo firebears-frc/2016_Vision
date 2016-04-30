@@ -62,6 +62,7 @@ u32_t jl_cv_loop_detect_circle(jl_cv_t* jl_cv, u32_t max,
 u32_t jl_cv_loop_detect_lines(jl_cv_t* jl_cv, u32_t max_rtn,
 	i32_t filter_out, u32_t minlen, jl_cv_line_t* rtn_lines);
 u32_t jl_cv_loop_objectrects(jl_cv_t* jl_cv,u32_t max_rtn,jl_cv_rect_t* rtn_rects);
+void jl_cv_loop_bigobject(jl_cv_t* jl_cv, jl_cv_rect_t* rtn_rect);
 // Erosion.
 void jl_cv_erode(jl_cv_t* jl_cv);
 void jl_cv_skeleton(jl_cv_t* jl_cv, int w, int h, int* values);
