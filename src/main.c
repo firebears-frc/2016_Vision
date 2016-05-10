@@ -59,7 +59,6 @@ static inline void vi_redraw(jl_t* jl) {
 #if DRAW_TARGET == 1
 	// Draw target
 	MEMTESTER(jl, "Draw target");
-	if(ctx->target.h < 100) {
 	u32_t drawsize = ctx->target.h / 2;
 	jl_cv_draw_circle(ctx->jl_cv, (jl_rect_t) {
 		ctx->targetx,ctx->targety,drawsize/2,0});
@@ -69,7 +68,6 @@ static inline void vi_redraw(jl_t* jl) {
 	jl_cv_draw_line(ctx->jl_cv, (jl_cv_line_t) {
 		cvPoint(ctx->targetx,ctx->targety-drawsize),
 		cvPoint(ctx->targetx,ctx->targety+drawsize)});
-	}
 #endif
 	MEMTESTER(jl, "Target drawn");
 	// Change to image
@@ -141,11 +139,6 @@ static inline void vi_push(jl_t* jl) {
 
 static inline void vi_process(jl_t* jl) {
 	ctx_t* ctx = jl->prg_context;
-//	m_u16_t i = 0;
-//	jl_cv_rect_t target;
-
-//	int maxh = 0;
-//	int maxi = 0;
 
 	MEMTESTER(jl, "loop");
 // Read image
@@ -158,22 +151,6 @@ static inline void vi_process(jl_t* jl) {
 // Blob Detect
 	jl_cv_loop_bigobject(ctx->jl_cv, &ctx->target);
 
-// Find the Best Blob
-/*	if(ctx->item_count == 0) {
-		ctx->movey = -500;
-		jl_print(jl, "FPS = %f, no recognized items.", (double)(1./jl->time.psec));
-		return;
-	}
-	MEMTESTER(jl, "blob_detect");
-	for(i = 0; i < ctx->item_count; i++) {
-		if(blobs[i].w > maxh) {
-			maxh = blobs[i].h;
-			maxi = i;
-		}
-#if (WINDOWED == 1 ) && ( DRAW_TARGET == 1 )
-		jl_cv_draw_rect(ctx->jl_cv, blobs[i]);
-#endif
-	}*/
 	ctx->size = ctx->target.h;
 //	ctx->target = blobs[maxi];
 	ctx->targetx = ctx->target.x + (ctx->target.w / 2);
@@ -326,7 +303,7 @@ static void vi_init(jl_t* jl) {
 	jl_print_function(jl, "2846_Vision");
 	vi_init_ctx(jl);
 #if WINDOWED == 1
-	jlgr_init(jl, "2016 Vision", 0, vi_init_graphics);
+	jlgr_init(jl, 0, vi_init_graphics);
 #else
 	vi_init_cv(jl);
 #endif
@@ -350,5 +327,5 @@ int main(int argc, char* argv[]) {
 		}
 		vi_print_bounds();
 	}
-	return jl_start(vi_init, vi_kill, sizeof(ctx_t));
+	return jl_start(vi_init, vi_kill, "2016 Vision", sizeof(ctx_t));
 }
